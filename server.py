@@ -16,70 +16,17 @@ import array
 import config
 import gevent
 import re
+from buffers import Buffer
 gevent.monkey.patch_socket()
 
 streaming_connections = {} #streamId : [connections]
-
-    
-
-
-
-
-class Buffer():
-    SIZE  = 100*1024 # no of blocks , that contain chunks 100 MB
-    CHUNK_BYTE_SIZE = 32*1024
-    _byte_chunks = [0 for i in range(SIZE)]
-    h = 0
-    b = 0 # from back till h    
-    def queue_chunk(self, _bytes):
-        self._byte_chunks[self.h%Buffer.SIZE] = _bytes
-        self.h = (self.h+1)%Buffer.SIZE
-    
-    def deque_chunk(self):
-        data = self._byte_chunks[self.b]
-        self.b+=1
-        self.b%=Buffer.SIZE
-        
-    def is_available(self):
-        return self.h!=self.b
-    
-    def size(self):
-        return abs(self.h-self.b)
-
-    def get_chunk(self, index):
-        if(self.size()>0) :  
-            return self._byte_chunks[index]
-        return None
-    
-    def get_current_head(self):
-        return self.h-1
+stream_path = re.compile("/([^/]+)/(.+)")
 
 #audio chunksize
 stream_buffers = {
                   "telugu": [Buffer() , None]
-         }
+}
 
-class StreamingClient():
-    current_index = 0
-    last_sent_time = 0
-    buffer = None
-    socket = None
-    last_sent_time = time.time() # 4 chunks once  #16*chunks per second #bitrate , 16kbytes per second =>
-    stream_id = None
-    
-    def __init__(self, stream_id):
-        self.stream_id = stream_id
-        self.buffer = stream_buffers[stream_id][0]
-        streaming_connections[self.stream_id].append(self)
-        
-    def handle_write(self):# should call whenever socket is writable , continuously call this method
-        if(time.time() - self.last_sent_time > 0.25):
-            for i in range(4):
-                chunk = self.buffer.get_chunk(self.current_index)
-                if(chunk):
-                    self.socket.send(chunk)
-                    self.current_index+=1
-            self.last_sent_time = time.time()
     
 #TODO:
 # read from main streaming socket that just reads and file and dump raw bytes , 
@@ -96,39 +43,15 @@ class StreamingClient():
 #libevent , keep broadcasting events , new polls , new chats etc
 
 
-
-def get_next_file():# from the current polls
+def handle_events(socket, address , stream_id):
     pass
 
-
-def create_polls():
-    pass
-
-#@celient_session
-def listen_to_audio_stream( stream_id ,  user =None):
-    pass
-
-#@client_session
-def listen_to_general_events(stream_id , user =None):
-    pass
-
-def get_next_polls(stream_id):
-    pass
-
-
-event_path = re.compile("/([^/]+)/(.+)")
-
-
-
-
-def audio_streaming(socket, address , stream_id):
-    
-    
+def handle_stream(socket, address, stream_id):    
     for i in config.RESPONSE:
         socket.send(i)
         print i
     # using a makefile because we want to use readline()
-    buffer = stream_buffers["telugu"][0]
+    buffer = stream_buffers[stream_id][0]
     last_sent_time = time.time() # 4 chunks once  #16*chunks per second #bitrate , 16kbytes per second =>
     current_index = buffer.get_current_head()-4
     
@@ -139,10 +62,16 @@ def audio_streaming(socket, address , stream_id):
             chunk = buffer.get_chunk(current_index)
             #chunk = 32kb = > 16kbytes/sec => 1 chunks per 2 seconds 
             if(chunk):
-                socket.send(chunk)
-                print "sending chunk at ", current_index , "writing unsynronized"
-                current_index+=1
-                gevent.sleep(0.80 - time.time()+last_sent_time)
+                try:
+                    n = 0
+                    while(n<len(chunk)):    
+                        n += socket.send(chunk[n:])
+                    print "sending chunk at ", current_index , "writing unsynronized"
+                    current_index+=1
+                    gevent.sleep(0.80 - time.time()+last_sent_time)
+                except:
+                    #client disconnected
+                    break
             else:
                 gevent.sleep(0.80)
         else:
@@ -150,23 +79,22 @@ def audio_streaming(socket, address , stream_id):
             gevent.sleep(1)
         
 
-
 # this handler will be run for each incoming connection in a dedicated greenlet
 def handle_connection(socket, address):
     print('New connection from %s:%s' % address)
     
     data = socket.recv(1024)
-    headers = data.split("\r\n")
-    request_type , request_path , http_version = headers[0].split(" ")
+    request_type , request_path , http_version = data.split("\r\n")[0].split(" ")
     
-    request_path = event_path.findall(request_path)
-    
-    if(request_path):
-        stream_id =  request_path[0]
-#         send_events(socket , address , stream_id)
-        return
-    else:
-        stream_
+    stream_request = stream_path.findall(request_path)
+    if(stream_request):
+        stream_request = stream_request[0]
+        stream_id =  stream_request[1]
+
+        if(stream_request[0]=="events"):
+            handle_events(socket , address , stream_id)
+        elif(stream_request[0]=="stream"):
+            handle_stream(socket, address , stream_id)
 
 
 class AudioStreamReader(Greenlet):
@@ -182,7 +110,7 @@ class AudioStreamReader(Greenlet):
         self.buffer = stream_buffers[self.stream_id][0]
     def _run(self):
         while(True):
-            self.fd = open("/Users/abhinav/Downloads/bale_bale_magadivoy/02 - Endaro [www.AtoZmp3.in].mp3", 'rb')
+            self.fd = open("/Users/abhinav/Downloads/bale_bale_magadivoy/04 - Motta Modatisari [www.AtoZmp3.in].mp3", 'rb')
             print self.fd
             # if there is valid ID3 data, read it out of the file first,
             # so we can skip sending it to the client
