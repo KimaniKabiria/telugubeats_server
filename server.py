@@ -17,15 +17,31 @@ import config
 import gevent
 import re
 from buffers import Buffer
+import dbutils
+import polls
+from events import EventListeners
+from audio_streams import AudioStreamReader, handle_audio_stream
+from models.polls import PollItem, Poll
+from models.song import Song
+from mongoengine.connection import connect
+from bson import json_util
+from bson.son import SON
 gevent.monkey.patch_socket()
 
-streaming_connections = {} #streamId : [connections]
 stream_path = re.compile("/([^/]+)/(.+)")
 
+
+def initDb():
+    dbServer = {"dbName":"quizApp",
+                       "ip":"0.0.0.0",# "db.quizapp.appsandlabs.com",
+                       "port": 27017,
+                       "username": "quizapp",
+                       "password":"XXXXX"
+       }
+    dbConnection = connect(dbServer["dbName"], host=dbServer["ip"], port=dbServer["port"])
+    
 #audio chunksize
-stream_buffers = {
-                  "telugu": [Buffer() , None]
-}
+
 
     
 #TODO:
@@ -43,103 +59,68 @@ stream_buffers = {
 #libevent , keep broadcasting events , new polls , new chats etc
 
 
-def handle_events(socket, address , stream_id):
-    pass
-
-def handle_stream(socket, address, stream_id):    
-    for i in config.RESPONSE:
-        socket.send(i)
-        print i
-    # using a makefile because we want to use readline()
-    buffer = stream_buffers[stream_id][0]
-    last_sent_time = time.time() # 4 chunks once  #16*chunks per second #bitrate , 16kbytes per second =>
-    current_index = buffer.get_current_head()-4
+def send_init_data(socket , address , stream_id):
+    song = Song.objects().get()
+    poll = Poll()
+    poll_item = PollItem(poll_count =10 , song = song)    
+    poll.poll_items= [poll_item , poll_item , poll_item , poll_item]
     
-    while True:
-        cur_time = time.time()
-        if(cur_time - last_sent_time> 0.80):
-            last_sent_time = cur_time
-            chunk = buffer.get_chunk(current_index)
-            #chunk = 32kb = > 16kbytes/sec => 1 chunks per 2 seconds 
-            if(chunk):
-                try:
-                    n = 0
-                    while(n<len(chunk)):    
-                        n += socket.send(chunk[n:])
-                    print "sending chunk at ", current_index , "writing unsynronized"
-                    current_index+=1
-                    gevent.sleep(0.80 - time.time()+last_sent_time)
-                except:
-                    #client disconnected
-                    break
-            else:
-                gevent.sleep(0.80)
-        else:
-            print "waiting on buffer"
-            gevent.sleep(1)
-        
+    
+    poll_data = SON()
+    poll_data["poll"] = poll.to_mongo()
+    poll_data["song" ] = song.to_mongo()
+    poll_data = json_util.dumps(poll_data)
+    socket.send(poll_data)
+    socket.close()
+    
+    
+
+    
+#this should internally spawn 
+events_handler = EventListeners()
+
+
+
 
 # this handler will be run for each incoming connection in a dedicated greenlet
 def handle_connection(socket, address):
     print('New connection from %s:%s' % address)
     
-    data = socket.recv(1024)
-    request_type , request_path , http_version = data.split("\r\n")[0].split(" ")
+    headers = socket.recv(1024)
+    request_type , request_path , http_version = headers.split("\r\n")[0].split(" ")
     
     stream_request = stream_path.findall(request_path)
     if(stream_request):
-        stream_request = stream_request[0]
+        stream_request  = stream_request[0]
+        stream_request_type = stream_request[0]
         stream_id =  stream_request[1]
+        
+        
+        if(stream_request_type=="events"):
+            events_handler.add_listener(stream_id, socket)
+            
+        elif(stream_request_type=="audio_stream"):
+            # periodically send data , most important
+            handle_audio_stream(socket, address , stream_id)
+            
+        elif(stream_request_type=="init_data"):
+            send_init_data(socket, address , stream_id)
+            
+            
+        
 
-        if(stream_request[0]=="events"):
-            handle_events(socket , address , stream_id)
-        elif(stream_request[0]=="stream"):
-            handle_stream(socket, address , stream_id)
 
 
-class AudioStreamReader(Greenlet):
-    stream_id = None
-    fd = None
-    id3 = None
-    last_time_stamp  = time.time()
-
-    # write to telugu buffer
-    def __init__(self, stream_id):
-        Greenlet.__init__(self)
-        self.stream_id = stream_id
-        self.buffer = stream_buffers[self.stream_id][0]
-    def _run(self):
-        while(True):
-            self.fd = open("/Users/abhinav/Downloads/bale_bale_magadivoy/04 - Motta Modatisari [www.AtoZmp3.in].mp3", 'rb')
-            print self.fd
-            # if there is valid ID3 data, read it out of the file first,
-            # so we can skip sending it to the client
-            try:
-                self.id3 = id3reader.Reader(self.fd)
-                if isinstance(self.id3.header.size, int): # read out the id3 data
-                    self.fd.seek(self.id3.header.size, os.SEEK_SET)
-                
-                while(True):
-                    try:
-                        cur_time = time.time()
-                        if(cur_time- self.last_time_stamp > 0.80):
-                            self.last_time_stamp = cur_time
-                            data_arr = array.array('B')
-                            data_arr.fromfile(self.fd, Buffer.CHUNK_BYTE_SIZE)
-                            self.buffer.queue_chunk(data_arr)
-                            print "writing data into stream buffer , queued chuck", self.buffer.get_current_head() 
-                            gevent.sleep(0.80- time.time()+self.last_time_stamp)
-                    except EOFError:
-                        self.fd.close()
-                        break        
-            except Exception as e:
-                    print e
 
 if __name__ == "__main__":
     
+    initDb()
     #initialize reading and file decoder
+    #keep reading streams , auto reconnecting 
     stream_reader_thread = AudioStreamReader("telugu")
     stream_reader_thread.start()
+    
+    events_handler.start_reading_events()
     
     server = StreamServer(
     ('', 8888), handle_connection)
