@@ -7,6 +7,7 @@ import bson
 from bson import json_util
 import socket
 from StringIO import StringIO
+from models.polls import Poll
 
 
 initDb()
@@ -48,7 +49,7 @@ def load():
 def test2():
     song = Song.objects().get()
     data = SON()
-    data["song"] = song.to_mongo()
+    data["song"] = song.to_son()
     print json_util.dumps(data)
 
 def test3():
@@ -68,5 +69,13 @@ def test3():
         request_text =  clientsocket.recv(1<<16)
         print "###" , post_data
 
-
+def test4():
+    ''' poll create and get one'''
+#    initDb()
+    poll = Poll.create_next_poll("telugu")
+    print poll.to_json()
+    print Poll.get_current_poll("telugu").to_json()
+    
+test4()
+    
 test3()
