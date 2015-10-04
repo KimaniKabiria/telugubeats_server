@@ -5,6 +5,8 @@ import json
 from bson.son import SON
 import bson
 from bson import json_util
+import socket
+from StringIO import StringIO
 
 
 initDb()
@@ -48,6 +50,23 @@ def test2():
     data = SON()
     data["song"] = song.to_mongo()
     print json_util.dumps(data)
-    
 
-test2()
+def test3():
+    from mimetools import Message
+    serversocket = socket.socket(
+    socket.AF_INET, socket.SOCK_STREAM)
+    #bind the socket to a public host,
+    # and a well-known port
+    serversocket.bind(("0.0.0.0", 8886))
+    #become a server socket
+    serversocket.listen(5)
+    while 1:
+        #accept connections from outside
+        (clientsocket, address) = serversocket.accept()
+        #now do something with the clientsocket
+        #in this case, we'll pretend this is a threaded server
+        request_text =  clientsocket.recv(1<<16)
+        print "###" , post_data
+
+
+test3()

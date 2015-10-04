@@ -2,6 +2,8 @@ server_address = '0.0.0.0'
 server_port = 8888
 
 
+
+SERVER_SECRET = "ubjebkhelloworlddudemomiloveyou"
 CHUNKSIZE = 32*1024# 417 bytes=one frame = 1152 samples, 39frames per second , 
 
 RESPONSE = ["HTTP/1.0 200 OK\r\n",
