@@ -17,7 +17,6 @@ import config
 import gevent
 import re
 from buffers import Buffer
-from events import EventListeners
 from gevent_handlers.audio_streams import AudioStreamReader, handle_audio_stream
 from models.polls import PollItem, Poll
 from models.song import Song
@@ -34,20 +33,10 @@ import urlparse
 from requests.polls import do_poll
 from requests.users import do_register_user
 import urllib
+from models import initDb
 
 gevent.monkey.patch_socket()
 
-
-
-def initDb():
-    dbServer = {"dbName":"quizApp",
-                       "ip":"0.0.0.0",# "db.quizapp.appsandlabs.com",
-                       "port": 27017,
-                       "username": "quizapp",
-                       "password":"XXXXX"
-       }
-    dbConnection = connect(dbServer["dbName"], host=dbServer["ip"], port=dbServer["port"])
-    
 #audio chunksize
 
 
@@ -80,11 +69,11 @@ request_handlers = [(re.compile("stream/([^/]+)/(.*)")  ,  do_stream_request), #
 
 # this handler will be run for each incoming connection in a dedicated greenlet
 def handle_connection(socket, address):
-    print('New connection from %s:%s' % address)
         
     socket_file = socket.makefile('r')    
     request_line = socket_file.readline()
     request_type , request_path , http_version = request_line.split(" ")
+    print "new request", request_path
     headers = {}
     while(True):
         l = socket_file.readline()

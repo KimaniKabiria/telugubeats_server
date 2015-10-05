@@ -2,6 +2,7 @@ from models import initDb
 import json
 from models.album import Album
 from models.song import Song, SongsMeta
+from models.polls import Poll
 
 initDb()
 
@@ -12,11 +13,13 @@ def insert_init_data():
         movie = data[movie_name]
         a = Album()
         a.name = movie_name
-        a.directors = data.get("directors",None)
-        a.music_directors = data.get("music_directors",None)
-        a.imageUrl = data.get("img",None)
-        a.actors = data.get("actors",None)
+        a.directors = movie.get("directors",None)
+        a.music_directors = movie.get("music_directors",None)
+        a.image_url = movie.get("img",None)
+        a.actors = movie.get("actors",None)
         a.save()
+        
+        
         print "saved :: ", a.name
         for song in movie.get("songs",[]):
             s = Song()
@@ -27,15 +30,30 @@ def insert_init_data():
             s.track_n = count
             count +=1
             s.save()
-            print "    ", "saved song : " , s.title        
+            print "    ", "saved song : " , s.title , s.album 
             
-def get_max_track():
+    
+    poll = Poll.create_next_poll("telugu")
+    print poll.to_json()
+    print Poll.get_current_poll("telugu").to_json()        
+    
+    
+    set_max_track()
+    
+def set_max_track():
     data = Song.objects().order_by("-track_n")[0]
     print data.track_n
-    m = SongsMeta()
+    
+    songsMeta = SongsMeta.objects().all()
+    if(len(songsMeta)>0):
+        m = songsMeta[0]
+    else:
+        m = SongsMeta()
     m.n = data.track_n
     m.save()
-    
-    
-    
-get_max_track()
+
+
+set_max_track()
+
+
+#get_max_track()

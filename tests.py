@@ -1,5 +1,4 @@
 from models.album import Album
-from server import initDb
 from models.song import Song
 import json
 from bson.son import SON
@@ -7,7 +6,11 @@ import bson
 from bson import json_util
 import socket
 from StringIO import StringIO
-from models.polls import Poll
+from models.polls import Poll, UserPolls
+from models import initDb
+from mongoengine.document import Document
+from mongoengine.fields import ReferenceField, IntField
+from bson.dbref import DBRef
 
 
 initDb()
@@ -69,13 +72,31 @@ def test3():
         request_text =  clientsocket.recv(1<<16)
         print "###" , post_data
 
-def test4():
+def test4(create_poll=False):
     ''' poll create and get one'''
 #    initDb()
-    poll = Poll.create_next_poll("telugu")
-    print poll.to_json()
+    if(create_poll):
+        poll = Poll.create_next_poll("telugu")
+        print poll.to_json()
     print Poll.get_current_poll("telugu").to_json()
     
-test4()
+ 
+def test5():
+    class B(Document):
+        count = IntField()
+        
+    class A(Document):
+        b = ReferenceField(B)
+        
     
-test3()
+    b = B(count =100)
+    b.save()
+    a = A(b = DBRef('B', b.id))
+    a.save()
+    print a.to_json() , b.to_json()
+    print "###", a.id  , b.id
+    print A.objects(b =  b.id).get().to_json()
+    
+    
+#test4(False)
+test5()   

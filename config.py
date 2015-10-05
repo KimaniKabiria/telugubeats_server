@@ -6,6 +6,10 @@ server_port = 8888
 SERVER_SECRET = "ubjebkhelloworlddudemomiloveyou"
 CHUNKSIZE = 32*1024# 417 bytes=one frame = 1152 samples, 39frames per second , 
 
+
+
+OK_200 = "HTTP/1.0 200 OK\r\n\r\n"
+
 RESPONSE = ["HTTP/1.0 200 OK\r\n",
      "icy-notice1: <BR>This stream requires",
      "icy-notice2: Winamp, or another streaming media player<BR>\r\n",
