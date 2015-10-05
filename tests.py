@@ -94,7 +94,9 @@ def test5():
     a = A(b = DBRef('B', b.id))
     a.save()
     print a.to_json() , b.to_json()
+    
     print "###", a.id  , b.id
+    print type(b.id)
     print A.objects(b =  b.id).get().to_json()
     
     
