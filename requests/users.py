@@ -1,0 +1,53 @@
+from models.user import User
+from bson import json_util
+from helpers.auth import decode_signed_value, create_signed_value
+from config import SERVER_SECRET, OK_200
+import json
+from responses.stream import InitData
+from models.polls import Poll
+from models.song import Song
+from requests import stream_events_handler
+from enums import Event
+
+def do_register_user(socket, user=None, post = None):
+    user = User.register_user(**json.loads(post["user_data"][0]))
+    uid = str(user.id)
+    user = user.to_son()
+    user["auth_key"] = create_signed_value(SERVER_SECRET, "auth_key", uid)
+    socket.send(OK_200)
+    socket.send(json_util.dumps(user))
+    socket.close()
+    
+
+
+
+def send_init_data(socket , stream_id, user=None):
+    song = Song.objects()[20]
+    
+    poll = Poll.get_current_poll(stream_id)
+    
+    init_data = InitData()
+    if(user):
+        init_data.user = user
+        poll_item = user.get_poll_item(poll)
+        if(poll_item):
+            init_data.user_poll_item_id = str(poll_item.id)#string
+        
+    init_data.poll = poll
+    init_data.current_song  = song
+        
+    init_data = json_util.dumps(init_data.to_son())
+    socket.send(OK_200)
+    socket.send(init_data)
+    socket.close()
+    
+    
+def do_dedicate_event(socket, stream_id,  post=None , user = None):
+    user_name2 = post.get("user_name",None)
+    
+    stream_events_handler.publish_event(None, Event.DEDICATE,  user_name2, from_user = user.to_short_mongo())
+    
+    socket.send(OK_200)
+    socket.send("ok")
+    socket.close()
+    
