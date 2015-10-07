@@ -8,4 +8,7 @@ class Album(Document):
     directors = ListField(StringField());
     music_directors = ListField(StringField())
     actors = ListField(StringField());
-    imageUrl = StringField()
+    image_url = StringField()
+    
+    def to_son(self):
+        return self.to_mongo()
