@@ -8,11 +8,13 @@ from models.polls import Poll
 from models.song import Song
 from requests import stream_events_handler
 from enums import Event
+from gevent_handlers.events import EventListeners
 
 def do_register_user(socket, user=None, post = None):
     user = User.register_user(**json.loads(post["user_data"][0]))
     uid = str(user.id)
     user = user.to_son()
+    print user
     user["auth_key"] = create_signed_value(SERVER_SECRET, "auth_key", uid)
     socket.send(OK_200)
     socket.send(json_util.dumps(user))
@@ -34,8 +36,9 @@ def send_init_data(socket , stream_id, user=None):
             init_data.user_poll_item_id = str(poll_item.id)#string
         
     init_data.poll = poll
+    init_data.n_user = len( stream_events_handler.event_listeners[stream_id])
     init_data.current_song  = song
-        
+    init_data.last_few_events = EventListeners.last_few_events.get(stream_id, [])
     init_data = json_util.dumps(init_data.to_son())
     socket.send(OK_200)
     socket.send(init_data)
@@ -43,9 +46,8 @@ def send_init_data(socket , stream_id, user=None):
     
     
 def do_dedicate_event(socket, stream_id,  post=None , user = None):
-    user_name2 = post.get("user_name",None)
-    
-    stream_events_handler.publish_event(None, Event.DEDICATE,  user_name2, from_user = user.to_short_mongo())
+    user_name2 = post.get("user_name",["somebody"])
+    stream_events_handler.publish_event(stream_id, Event.DEDICATE,  user_name2[0], from_user = user.to_short_mongo())
     
     socket.send(OK_200)
     socket.send("ok")

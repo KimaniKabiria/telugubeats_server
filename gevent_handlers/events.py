@@ -6,6 +6,7 @@ import gevent.queue
 from bson import json_util
 from bson.son import SON
 from config import OK_200
+from models.events import StreamEvent
 
 
 
@@ -14,11 +15,14 @@ class EventListeners:
     event_listeners = {} 
     event_queue = {}    
     
-    last_few_events = []
+    last_few_events = {}
+    
+    
     
     def init_stream_listeners(self, stream_id):
         self.event_listeners[stream_id] = {}
         self.event_queue[stream_id] = gevent.queue.Queue()
+        self.last_few_events[stream_id]  = StreamEvent.get_events(stream_id)
         
         Greenlet.spawn(EventListeners.start_publishing_events, self, stream_id)
         '''
@@ -45,10 +49,11 @@ class EventListeners:
             event_data = self.event_queue[stream_id].get()
             data_to_send = json_util.dumps(event_data).replace("\r\n", "\n\n")
             
-            EventListeners.last_few_events.append(data_to_send)
-            if(len(EventListeners.last_few_events)>20):
-                EventListeners.pop(0)
-                
+            EventListeners.last_few_events[stream_id].append(data_to_send)
+            
+            if(len(EventListeners.last_few_events[stream_id])>20):
+                EventListeners.last_few_events[stream_id].pop(0)
+            StreamEvent.add(stream_id, data_to_send)
             for socket in self.event_listeners[stream_id]:
                 # send data in parallel ?
                 Greenlet.spawn(EventListeners.send_event , self, stream_id , socket, data_to_send)
@@ -56,7 +61,6 @@ class EventListeners:
             
         
     def publish_event(self, stream_id , event_id,  event_data , from_user=None):
-        #bulk publishing, is this correct ? TODO:
         self.event_queue[stream_id].put({"event_id": event_id, "payload":event_data, "from_user": from_user})
         
                 

@@ -31,9 +31,11 @@ from helpers.auth import decode_signed_value
 from models.user import User
 import urlparse
 from requests.polls import do_poll
-from requests.users import do_register_user
+from requests.users import do_register_user, do_dedicate_event
 import urllib
 from models import initDb
+from requests import init_stream_event_handlers
+from requests.chat import do_chat_event
 
 gevent.monkey.patch_socket()
 
@@ -61,36 +63,50 @@ gevent.monkey.patch_socket()
     
 #this should internally spawn 
 
-request_handlers = [(re.compile("stream/([^/]+)/(.*)")  ,  do_stream_request), #stream/telugu/audio or events
-                    ( re.compile("poll/([^/]+)/([^/]+)/(.*)") , do_poll), #"/poll/telugu/123123/12312312"
-                    ( re.compile("user/login") , do_register_user), #"/poll/telugu/123123/12312312"
+request_handlers = [(re.compile("/stream/([^/]+)/(.*)")  ,  do_stream_request), #stream/telugu/audio or events
+                    ( re.compile("/poll/([^/]+)/([^/]+)/(.*)") , do_poll), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/user/login") , do_register_user), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/dedicate/(.+)") , do_dedicate_event),
+                    ( re.compile("/chat/(.+)") , do_chat_event),
                    ]
 
 
+
+def read_line(socket):
+    data = ""
+    while(True):
+        byt = socket.recv(1)
+        data+=byt
+        if(byt=='\n' or not byt):
+            return data
+        
 # this handler will be run for each incoming connection in a dedicated greenlet
 def handle_connection(socket, address):
-        
-    socket_file = socket.makefile('r')    
-    request_line = socket_file.readline()
+    
+    
+    request_line = read_line(socket)
     request_type , request_path , http_version = request_line.split(" ")
     print "new request", request_path
     headers = {}
     while(True):
-        l = socket_file.readline()
+        l = read_line(socket)
         if(l=='\r\n'):
             break
-        
+        if( not l):
+            return
         header_type , data  =  l.split(": ",1)
         headers[header_type] = data
-
     post_data = None
     if(request_type == "POST" and headers.get("Content-Length", None)):
-        n = int(headers.get("Content-Length",0))
-        data = ""
-        while(len(data) < n):
-            data += socket.recv(n)
-        post_data = urlparse.parse_qs(data)
-        
+        n = int(headers.get("Content-Length","0").strip(" \r\n"))
+        if(n>0):
+            data = ""
+            while(len(data) < n):
+                bts = socket.recv(n)
+                if(not bts):
+                    break
+                data +=bts
+            post_data = urlparse.parse_qs(data)
     ##app specific headers
     auth_key = headers.get("auth_key", None)
     user = None
@@ -100,16 +116,19 @@ def handle_connection(socket, address):
         user = User.objects.get(pk = decode_signed_value(config.SERVER_SECRET , "auth_key", auth_key))
         
     for handler in request_handlers:
-        args = handler[0].findall(request_path)
+        
+        args = handler[0].match(request_path)
         func = handler[1]
         kwargs = {"user":user}
-        if(post_data):
+        if(post_data!=None):
             kwargs["post"] = post_data
-        if(args):
-            if(isinstance(args[0],tuple)):
-                func(socket, *args[0] , **kwargs)
+        if(args!=None):
+            fargs = args.groups()
+            if(fargs):
+                func(socket, *fargs , **kwargs)
             else:
                 func(socket, **kwargs)
+
                 
 if __name__ == "__main__":
     
@@ -117,8 +136,7 @@ if __name__ == "__main__":
     #initialize reading and file decoder
     #keep reading streams , auto reconnecting 
     init_main_audio_streams()
-    
-    
+    init_stream_event_handlers()
     server = StreamServer(
     ('', 8888), handle_connection)
     
