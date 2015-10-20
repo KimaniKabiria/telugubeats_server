@@ -106,6 +106,8 @@ class User(Document):
             user_poll = UserPolls(user= self , 
                                   poll = ObjectId(poll_id),
                                   poll_item = ObjectId(poll_item_id))
+            
+            new_poll_item.vote_up()
             user_poll.save()
             return None, None, poll_item_id, new_poll_item.song.title
         
