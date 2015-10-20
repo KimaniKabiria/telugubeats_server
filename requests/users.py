@@ -24,7 +24,7 @@ def do_register_user(socket, user=None, post = None):
 
 
 def send_init_data(socket , stream_id, user=None):
-    song = Song.objects()[20]
+    song = Song.objects().order_by("-last_played")[0]
     
     poll = Poll.get_current_poll(stream_id)
     

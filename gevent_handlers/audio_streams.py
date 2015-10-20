@@ -6,6 +6,12 @@ import os
 import gevent
 from buffers import Buffer
 import config
+from models.polls import Poll
+from requests import stream_events_handler
+from enums import Event
+from responses.stream import InitData
+from bson import json_util
+from datetime import datetime
 
 
 
@@ -21,7 +27,7 @@ class AudioStreamReader(Greenlet):
     #
     
     
-    sleep_time = Buffer.CHUNK_BYTE_SIZE/((319.0/8)*1024)
+    sleep_time = Buffer.CHUNK_BYTE_SIZE/((128.0/8)*1024) #128kbps
     # write to telugu buffer
     def __init__(self, stream_id):
         Greenlet.__init__(self)
@@ -30,8 +36,30 @@ class AudioStreamReader(Greenlet):
     def _run(self):
         print "loading audio stream :: ", self.stream_id
         while(True):
-            self.fd = open("/Users/abhinav/Downloads/bale_bale_magadivoy/04 - Motta Modatisari [www.AtoZmp3.in].mp3", 'rb')
+            song_path = "/Users/abhinav/Downloads/bale_bale_magadivoy/04 - Motta Modatisari [www.AtoZmp3.in].mp3"
+            current_poll = poll = Poll.get_current_poll(self.stream_id)
+            if(current_poll):
+                song = current_poll.get_highest_poll_song(self.stream_id)
+                if(song):
+                    song_path = song.path
+                    
                             
+            poll = Poll.create_next_poll(self.stream_id)
+            
+            print "playing::", song_path
+            self.fd = open(song_path, 'rb')
+            
+            reset_data = InitData()
+            
+            reset_data.poll = poll
+            reset_data.n_user = 1000+len( stream_events_handler.event_listeners[self.stream_id])
+            reset_data.current_song  = song
+            song.last_played = datetime.now()
+            song.save()
+            event_data = json_util.dumps(reset_data.to_son())
+            
+            stream_events_handler.publish_event(self.stream_id, Event.RESET_POLLS_AND_SONG, event_data, from_user = None)
+
             # if there is valid ID3 data, read it out of the file first,
             # so we can skip sending it to the client
             try:

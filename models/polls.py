@@ -37,7 +37,18 @@ class Poll(Document):
             data["poll_items"][i] = self.poll_items[i].to_son()
         return data
     
-    
+    @classmethod
+    def get_highest_poll_song(cls, stream_id):
+        poll = cls.get_current_poll(stream_id)
+        mx = -1
+        mx_song = None
+        for poll_item in poll.poll_items:
+            if(poll_item.poll_count>mx):
+                mx = poll_item.poll_count
+                mx_song = poll_item.song
+        return mx_song
+                
+                
     @classmethod
     def get_current_poll(cls, stream_id):
         try:
@@ -71,7 +82,8 @@ class Poll(Document):
             
             poll.poll_items = poll_items
             poll.save()#again with updates pollItems
-        except:
+        except Exception as ex:
+            print ex
             poll.delete()
             for poll_item in poll_items:
                 poll_item.delete()

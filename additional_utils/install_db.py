@@ -3,11 +3,19 @@ import json
 from models.album import Album
 from models.song import Song, SongsMeta
 from models.polls import Poll
+from mongoengine.document import Document
 
 initDb()
 
+
+
 def insert_init_data():
-    data = json.loads(open("song_data.json","r").read())
+    
+    Album.drop_collection()
+    Song.drop_collection()
+    
+    
+    data = json.loads(open("mapped_songs.json","r").read())
     count = 0
     for movie_name in data:
         movie = data[movie_name]
@@ -21,11 +29,14 @@ def insert_init_data():
         
         
         print "saved :: ", a.name
-        for song in movie.get("songs",[]):
+        for song_title_path  in  movie.get("song_entries",[]):
+            if(not song_title_path): continue
+            song_title , path  = song_title_path
             s = Song()
-            s.title = song.get("name",None)
-            s.lyricists = song.get("lyricists",None)
-            s.singers = song.get("singers",None)
+            s.title = song_title
+#             s.lyricists = song.get("lyricists",None)
+#             s.singers = song.get("singers",None)
+            s.path = path
             s.album = a
             s.track_n = count
             count +=1
@@ -53,7 +64,6 @@ def set_max_track():
     m.save()
 
 
-set_max_track()
-
+insert_init_data()
 
 #get_max_track()

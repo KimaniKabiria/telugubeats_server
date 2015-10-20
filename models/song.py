@@ -19,6 +19,8 @@ class Song(Document):
     rating = IntField()
     album = ReferenceField(Album)   
     track_n = IntField()# just a number
+    path = StringField()#file path
+    last_played = DateTimeField()
     
     
     def to_son(self):

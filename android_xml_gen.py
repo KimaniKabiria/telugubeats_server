@@ -153,18 +153,33 @@ def print_java_code(layout):
         return uiHandle;
         }'''
             
-        
-print_java_code(v(
-                h(c("poll_image","ImageView"), v(
-                                h(c("poll_title","TextView"), c("voted", "TextView")),
-                                h(c("poll_subtitle","TextView") ,  c("poll_subtitle2", "TextView")),
-                                c("poll_subtitle3","TextView")
-                                )
-                        ),
-                        h(c("poll_percentage"),
-                                c("poll_count","TextView")
-                        )
-                ))
+
+#h - horizontal
+#v - vertical
+#c - id , layout type
+#s - scrollView vertical
+#l - layered stack over one another
+
+print_java_code(h(
+                  c('image', 'ImageView') , v(c('user_name','TextView'),
+                                              c('user_message','TextView')
+                                            ),
+                  
+                  )
+                )
+
+
+# (v(
+#                 h(c("poll_image","ImageView"), v(
+#                                 h(c("poll_title","TextView"), c("voted", "TextView")),
+#                                 h(c("poll_subtitle","TextView") ,  c("poll_subtitle2", "TextView")),
+#                                 c("poll_subtitle3","TextView")
+#                                 )
+#                         ),
+#                         h(c("poll_percentage"),
+#                                 c("poll_count","TextView")
+#                         )
+#                 ))
 
 # (v(c("live_polls_heading","TextView"),
 #                 c("live_polls_list","ListView")
