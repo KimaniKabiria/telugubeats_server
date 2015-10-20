@@ -10,15 +10,19 @@ from bson import json_util
 class PollChangeEvent:
     poll_id = None 
     count = 0
-    def __init__(self, poll_id , count ):
+    song_title = None
+    
+    def __init__(self, poll_id , count , song_title):
         self.poll_id = poll_id
         self.count = count
+        self.song_title = song_title
         
         
     def to_son(self):
         ret = SON()
         ret["poll_id"] = self.poll_id
         ret["count"] = self.count
+        ret["song_title"]  = self.song_title
         return ret
     
     @classmethod

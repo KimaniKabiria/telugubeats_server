@@ -86,25 +86,28 @@ class User(Document):
             return None
     #returns old poll data to 
     def do_poll(self , poll_id , poll_item_id):
+        
+        new_poll_item = PollItem.objects(pk = poll_item_id).get()
         try:
             user_poll = UserPolls.objects(user= self , poll = ObjectId(poll_id)).get()
             
             old_poll = user_poll.poll_item
+            # change to new poll
             user_poll.poll_item = ObjectId(poll_item_id)
             user_poll.save(validate=False)
+            
             if(old_poll.id!=poll_item_id):
-                new_poll_item = PollItem.objects(pk = poll_item_id).get()
                 new_poll_item.vote_up()
                 old_poll.vote_down()    
             
-            return str(old_poll.id)
+            return str(old_poll.id), old_poll.song.title , poll_item_id, new_poll_item.song.title
             
         except DoesNotExist:
             user_poll = UserPolls(user= self , 
                                   poll = ObjectId(poll_id),
                                   poll_item = ObjectId(poll_item_id))
             user_poll.save()
-            return None
+            return None, None, poll_item_id, new_poll_item.song.title
         
     
     
