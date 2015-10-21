@@ -159,7 +159,6 @@ def main():
         songs_file_names = SpellCorrection()
         for s in songs_folder:
             songs_file_names.add_to_correction_index( s, s)
-            
         
         change_score = possible_movies[0][1]
         for raga_movie_key , score in possible_movies[:10]:

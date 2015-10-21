@@ -12,6 +12,7 @@ from enums import Event
 from responses.stream import InitData
 from bson import json_util
 from datetime import datetime
+import urllib
 
 
 
@@ -46,8 +47,15 @@ class AudioStreamReader(Greenlet):
                             
             poll = Poll.create_next_poll(self.stream_id)
             
-            print "playing::", song_path
-            self.fd = open(song_path, 'rb')
+            
+            song_url_path="https://storage.googleapis.com/telugubeats_files/music/Telugu/"+urllib.quote(song_path[31:])
+            print "playing::", song_url_path
+            self.fd = urllib.urlopen(song_url_path)
+            
+            #spawn greenlet, keep reading into buffer
+            #block calls to seek and read if buffer is not sufficient enough
+            
+            if(not self.fd): continue
             
             reset_data = InitData()
             
