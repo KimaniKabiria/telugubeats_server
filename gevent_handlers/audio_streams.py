@@ -13,6 +13,7 @@ from responses.stream import InitData
 from bson import json_util
 from datetime import datetime
 import urllib
+from beta.seekable_file_block_url import RemoteUrlFileObject
 
 
 
@@ -48,14 +49,13 @@ class AudioStreamReader(Greenlet):
             poll = Poll.create_next_poll(self.stream_id)
             
             
-            song_url_path="https://storage.googleapis.com/telugubeats_files/music/Telugu/"+urllib.quote(song_path[31:])
+            song_url_path="http://storage.googleapis.com/telugubeats_files/music/Telugu/"+urllib.quote(song_path[31:])
             print "playing::", song_url_path
-            self.fd = urllib.urlopen(song_url_path)
+            self.fd = RemoteUrlFileObject(song_url_path)
             
             #spawn greenlet, keep reading into buffer
             #block calls to seek and read if buffer is not sufficient enough
             
-            if(not self.fd): continue
             
             reset_data = InitData()
             
@@ -73,15 +73,15 @@ class AudioStreamReader(Greenlet):
             try:
                 self.id3 = id3reader.Reader(self.fd)
                 if isinstance(self.id3.header.size, int): # read out the id3 data
-                    self.fd.seek(self.id3.header.size, os.SEEK_SET)
+                    self.fd.seek(self.id3.header.size)
                 
                 while(True):
                     try:
                         cur_time = time.time()
                         if(cur_time- self.last_time_stamp > AudioStreamReader.sleep_time):
                             self.last_time_stamp = cur_time
-                            data_arr = array.array('B')
-                            data_arr.fromfile(self.fd, Buffer.CHUNK_BYTE_SIZE)
+                            data_arr = array.array('c')
+                            data_arr.extend(self.fd.read(Buffer.CHUNK_BYTE_SIZE))
                             self.buffer.queue_chunk(data_arr)
                             gevent.sleep(AudioStreamReader.sleep_time- time.time()+self.last_time_stamp)
                     except EOFError:

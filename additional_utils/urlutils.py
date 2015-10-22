@@ -45,8 +45,7 @@ class ThreadPool:
         self.tasks.join()
 
 
-http_logger = urllib2.HTTPSHandler(debuglevel = 0)
-url_loader=urllib2.build_opener(http_logger,urllib2.HTTPCookieProcessor(),urllib2.ProxyHandler())
+url_loader=urllib2.build_opener(urllib2.HTTPCookieProcessor(),urllib2.ProxyHandler())
 urllib2.install_opener(url_loader)
 
 def get_data(url,post=None,headers={}, method = None):
@@ -56,7 +55,7 @@ def get_data(url,post=None,headers={}, method = None):
         req=urllib2.Request(url,post,headers)
         if(method!=None):
             req.get_method = lambda : method
-        ret = url_loader.open(req) 
+        ret = url_loader.open(req, timeout=10)
         if ret.info().get('Content-Encoding') == 'gzip':
             ret2 = ret
             try:

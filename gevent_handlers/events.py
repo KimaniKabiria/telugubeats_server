@@ -7,6 +7,7 @@ from bson import json_util
 from bson.son import SON
 from config import OK_200
 from models.events import StreamEvent
+from enums import Event
 
 
 
@@ -16,8 +17,6 @@ class EventListeners:
     event_queue = {}    
     
     last_few_events = {}
-    
-    
     
     def init_stream_listeners(self, stream_id):
         self.event_listeners[stream_id] = {}
@@ -47,9 +46,10 @@ class EventListeners:
     def start_publishing_events(self, stream_id):
         while(True):
             event_data = self.event_queue[stream_id].get()
+            event_id = event_data["event_id"]
             data_to_send = json_util.dumps(event_data).replace("\r\n", "\n\n")
-            
-            EventListeners.last_few_events[stream_id].append(data_to_send)
+            if(event_id!=Event.RESET_POLLS_AND_SONG):
+                EventListeners.last_few_events[stream_id].append(data_to_send)
             
             if(len(EventListeners.last_few_events[stream_id])>20):
                 EventListeners.last_few_events[stream_id].pop(0)

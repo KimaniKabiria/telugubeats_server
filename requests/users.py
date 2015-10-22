@@ -41,7 +41,15 @@ def send_init_data(socket , stream_id, user=None):
     init_data.last_few_events = EventListeners.last_few_events.get(stream_id, [])
     init_data = json_util.dumps(init_data.to_son())
     socket.send(OK_200)
-    socket.send(init_data)
+    n = 0
+    l = len(init_data)
+    
+    while(n<l):
+        n += socket.send(init_data[n:])
+        print n
+        if(n<0):
+            break
+        
     socket.close()
     
     
