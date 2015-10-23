@@ -8,7 +8,7 @@ def initDb():
     dbServer = {"dbName":"telugubeats",
                        "ip":"0.0.0.0",# "db.quizapp.appsandlabs.com",
                        "port": 27017,
-                       "username": "telugubeats",
+                       "username": "telugubeatsadmin",
                        "password":"XXXXX"
        }
     dbConnection = connect(dbServer["dbName"], host=dbServer["ip"], port=dbServer["port"])

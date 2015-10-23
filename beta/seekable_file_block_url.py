@@ -1,3 +1,7 @@
+# 
+# Author: Abhinav
+#
+
 import gevent.monkey
 gevent.monkey.patch_socket()
 
@@ -67,6 +71,8 @@ class RemoteUrlFileObject():
             bytes_until = min(len(self.file_buffer) , self.file_buffer_ptr+n_bytes)
             ret = self.file_buffer[self.file_buffer_ptr:  bytes_until]
             self.file_buffer_ptr = bytes_until
+            if(not ret):
+                raise EOFError()
             return ret
         elif(not self.file_end_bool):# still reading in progress , wait on semaphore #block
             if(self.waiting_until!=None):
@@ -97,7 +103,13 @@ class RemoteUrlFileObject():
             self.waiting_until = offset
             self.evt.acquire()
             self.seek(offset)
-
+            
+    def close(self):
+        try:
+            self.sock_file.close()
+        except:
+            pass
+        
 def test():
     r = RemoteUrlFileObject("https://storage.googleapis.com/telugubeats_files/music/Telugu/others/sampangi%20%282001%29%20-%20%5B320%20-%20vbr%20-%20acd%20-%20tolymp3z%5D/sampangi.mp3")
     r.seek(1024)
