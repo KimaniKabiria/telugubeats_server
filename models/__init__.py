@@ -11,7 +11,7 @@ def initDb():
                        "username": "telugubeatsadmin",
                        "password":"XXXXX"
        }
-    dbConnection = connect(dbServer["dbName"], host=dbServer["ip"], port=dbServer["port"])
+    dbConnection = connect(dbServer["dbName"], host=dbServer["ip"], port=dbServer["port"], username=dbServer["username"],password=dbServer["password"])
     
     
 
