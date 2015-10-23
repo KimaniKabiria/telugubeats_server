@@ -16,7 +16,7 @@ from additional_utils.urlutils import get_data
 
 class RemoteUrlFileObject():
     sock_file = None
-    file_buffer = array.array('c')
+    file_buffer = None
     file_buffer_ptr = 0
     file_end_bool = False
     evt = None
@@ -57,6 +57,8 @@ class RemoteUrlFileObject():
     def __init__(self, url):
         self.sock_file = get_data(url)
         gevent.spawn(self.start_reading_bytes)
+        self.file_buffer = array.array('c')
+        self.file_buffer_ptr = 0
 #         gevent.spawn(self.start_reading_dummy_bytes)
         self.evt = Semaphore(value=0)
         

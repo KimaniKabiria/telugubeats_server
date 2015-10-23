@@ -29,7 +29,7 @@ class AudioStreamReader(Greenlet):
     #
     
     
-    sleep_time = Buffer.CHUNK_BYTE_SIZE/((128.0/8)*1024) #128kbps
+    sleep_time = Buffer.CHUNK_BYTE_SIZE/((128.1/8)*1024) #128kbps
     # write to telugu buffer
     def __init__(self, stream_id):
         Greenlet.__init__(self)
@@ -80,9 +80,7 @@ class AudioStreamReader(Greenlet):
                         cur_time = time.time()
                         if(cur_time- self.last_time_stamp > AudioStreamReader.sleep_time):
                             self.last_time_stamp = cur_time
-                            data_arr = array.array('c')
-                            data_arr.extend(self.fd.read(Buffer.CHUNK_BYTE_SIZE))
-                            self.buffer.queue_chunk(data_arr)
+                            self.buffer.queue_chunk(self.fd.read(Buffer.CHUNK_BYTE_SIZE))
                             gevent.sleep(AudioStreamReader.sleep_time- time.time()+self.last_time_stamp)
                     except EOFError:
                         self.fd.close()
