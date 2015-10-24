@@ -38,14 +38,13 @@ class AudioStreamReader(Greenlet):
     def _run(self):
         print "loading audio stream :: ", self.stream_id
         while(True):
-            song_path = "/Users/abhinav/Downloads/bale_bale_magadivoy/04 - Motta Modatisari [www.AtoZmp3.in].mp3"
-            current_poll = poll = Poll.get_current_poll(self.stream_id)
+            song_path = "/"*31 + "devadas2006/06thalusa.mp3"
+            current_poll = Poll.get_current_poll(self.stream_id)
             if(current_poll):
                 song = current_poll.get_highest_poll_song(self.stream_id)
                 if(song):
                     song_path = song.path
                     
-                            
             poll = Poll.create_next_poll(self.stream_id)
             
             

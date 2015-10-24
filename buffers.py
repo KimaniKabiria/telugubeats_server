@@ -1,7 +1,7 @@
 
 class Buffer():
-    SIZE  = 100*1024 # no of blocks , that contain chunks 100 MB
-    CHUNK_BYTE_SIZE = 32*1024
+    SIZE  = 2*1024 # no of blocks , that contain chunks 2 MB
+    CHUNK_BYTE_SIZE = 32*1024 # 32kb
     _byte_chunks = [0 for i in range(SIZE)]
     h = 0
     b = 0 # from back till h    

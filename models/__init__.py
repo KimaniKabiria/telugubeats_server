@@ -6,10 +6,10 @@ from mongoengine.document import Document
 
 def initDb():
     dbServer = {"dbName":"telugubeats",
-                       "ip":"0.0.0.0",# "db.quizapp.appsandlabs.com",
+                       "ip":"104.155.234.161",# "db.quizapp.appsandlabs.com",
                        "port": 27017,
-                       "username": "telugubeatsadmin",
-                       "password":"XXXXX"
+                       "username": "abhinav",
+                       "password":"xxxxxxxx"
        }
     dbConnection = connect(dbServer["dbName"], host=dbServer["ip"], port=dbServer["port"], username=dbServer["username"],password=dbServer["password"])
     

@@ -1,7 +1,9 @@
-from mongoengine.fields import IntField, ReferenceField, ListField, StringField
+from mongoengine.fields import IntField, ReferenceField, ListField, StringField,\
+    DateTimeField
 from models.song import Song, SongsMeta
 from mongoengine.document import Document
 import random
+import datetime
 
 
 
@@ -30,6 +32,9 @@ class PollItem(Document):
 class Poll(Document):
     poll_items = ListField(ReferenceField(PollItem))
     stream_id = StringField()
+    created_at = DateTimeField(default=datetime.datetime.utcnow)
+    
+    
     
     def to_son(self, use_db_field=True, fields=None):
         data = Document.to_mongo(self, use_db_field=use_db_field, fields=fields)
@@ -43,16 +48,23 @@ class Poll(Document):
         mx = -1
         mx_song = None
         for poll_item in poll.poll_items:
-            if(poll_item.poll_count>mx):
+            poll_item.song = Song.objects(id=poll_item.song.id).get()
+            print poll_item.song.title , poll_item.poll_count
+            
+            if(poll_item.poll_count>=mx):
+                if(poll_item.poll_count==mx):
+                    if(random.randint(0,1)==1):
+                        continue
                 mx = poll_item.poll_count
                 mx_song = poll_item.song
+        
         return mx_song
                 
                 
     @classmethod
     def get_current_poll(cls, stream_id):
         try:
-            return Poll.objects(stream_id= stream_id).order_by('-_id')[0]
+            return Poll.objects(stream_id= stream_id).order_by('-created_at')[0]
         except Exception as ex:
             print ex
             return None
