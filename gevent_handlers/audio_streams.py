@@ -93,7 +93,7 @@ def handle_audio_stream(stream_id, socket):
         socket.send(i)
     buffer = AudioStreamReader.stream_buffers[stream_id][0]
     last_sent_time = time.time() # 4 chunks once  #16*chunks per second #bitrate , 16kbytes per second =>
-    current_index = buffer.get_current_head()-4
+    current_index = max(0 , buffer.get_current_head()-4)
     
     while True:
         cur_time = time.time()
