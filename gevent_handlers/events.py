@@ -37,8 +37,15 @@ class EventListeners:
     
     def send_event(self, stream_id , socket, data_to_send):
         try:
-            socket.send(data_to_send)
-            socket.send("\r\n\r\n")# stop word 
+            n = 0 
+            while(n<len(data_to_send)):    
+                n += socket.send(data_to_send[n:])
+                
+                
+            stop_chars = "\r\n\r\n"        
+            n = 0
+            while(n<len(stop_chars)):    
+                n += socket.send(stop_chars[n:])
         except:
             del self.event_listeners[stream_id][socket] # remove the socket
     
