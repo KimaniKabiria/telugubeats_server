@@ -37,7 +37,7 @@ from models import initDb
 from requests import init_stream_event_handlers
 from requests.chat import do_chat_event
 
-gevent.monkey.patch_socket()
+gevent.monkey.patch_all()
 
 #audio chunksize
 
@@ -85,7 +85,10 @@ def handle_connection(socket, address):
     
     
     request_line = read_line(socket)
-    request_type , request_path , http_version = request_line.split(" ")
+    try:
+        request_type , request_path , http_version = request_line.split(" ")
+    except:
+        socket.close()
     print "new request", request_path
     headers = {}
     while(True):
