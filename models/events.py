@@ -2,6 +2,8 @@ from mongoengine.document import Document
 from mongoengine.fields import StringField, ListField, DateTimeField
 from mongoengine.signals import pre_save
 import datetime
+from enums import Event
+from bson import json_util
 
 
 
@@ -20,4 +22,8 @@ class StreamEvent(Document):
     
     @classmethod
     def get_events(cls, stream_id, n = 20):
-        return [ i.data for i in StreamEvent.objects().order_by("-updated_at")[:20]]
+        events = map(lambda x : json_util.loads(x) , [ i.data for i in StreamEvent.objects().order_by("-updated_at")[:20]])
+        events = filter(lambda x : x["event_id"]!=Event.RESET_POLLS_AND_SONG , events)
+        return map(lambda x :json_util.dumps(x) , events)
+    
+    
