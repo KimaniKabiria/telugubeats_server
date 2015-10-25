@@ -22,7 +22,7 @@ class Buffer():
 
     def get_chunk(self, index):
         if(self.size()>0) :  
-            return self._byte_chunks[index]
+            return self._byte_chunks[index%Buffer.SIZE]
         return None
     
     def get_current_head(self):
