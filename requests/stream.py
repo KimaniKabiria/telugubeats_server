@@ -15,6 +15,9 @@ def do_stream_request(socket, stream_id, stream_request_type, user = None):
     
         if(stream_request_type=="events"):
             stream_events_handler.add_listener(stream_id, socket)
+            #send latest reset here
+            if(stream_events_handler.last_reset_event[stream_id]):
+                stream_events_handler.send_event(stream_id, socket, stream_events_handler.last_reset_event[stream_id])
             
         elif(stream_request_type=="audio"):
             # periodically send data , most important

@@ -17,7 +17,7 @@ class EventListeners:
     event_queue = {}    
     
     last_few_events = {}
-    
+    last_reset_event  = {}
     def init_stream_listeners(self, stream_id):
         self.event_listeners[stream_id] = {}
         self.event_queue[stream_id] = gevent.queue.Queue()
@@ -57,7 +57,9 @@ class EventListeners:
             data_to_send = json_util.dumps(event_data).replace("\r\n", "\n\n")
             if(event_id!=Event.RESET_POLLS_AND_SONG):
                 EventListeners.last_few_events[stream_id].append(data_to_send)                
-            
+            else:
+                self.last_reset_event[stream_id] = data_to_send
+                
             if(len(EventListeners.last_few_events[stream_id])>20):
                 EventListeners.last_few_events[stream_id].pop(0)
             StreamEvent.add(stream_id, data_to_send)
