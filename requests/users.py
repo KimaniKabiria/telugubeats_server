@@ -9,6 +9,7 @@ from models.song import Song
 from requests import stream_events_handler
 from enums import Event
 from gevent_handlers.events import EventListeners
+from models import get_init_data
 
 def do_register_user(socket, user=None, post = None):
     user = User.register_user(**json.loads(post["user_data"][0]))
@@ -24,20 +25,7 @@ def do_register_user(socket, user=None, post = None):
 
 
 def send_init_data(socket , stream_id, user=None):
-    song = Song.objects().order_by("-last_played")[0]
-    
-    poll = Poll.get_current_poll(stream_id)
-    
-    init_data = InitData()
-    if(user):
-        init_data.user = user
-        poll_item = user.get_poll_item(poll)
-        if(poll_item):
-            init_data.user_poll_item_id = str(poll_item.id)#string
-        
-    init_data.poll = poll
-    init_data.n_user = len( stream_events_handler.event_listeners[stream_id])
-    init_data.current_song  = song
+    init_data = get_init_data(stream_id, user)
     init_data.last_few_events = EventListeners.last_few_events.get(stream_id, [])
     init_data = json_util.dumps(init_data.to_son())
     socket.send(OK_200)
