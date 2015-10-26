@@ -1,6 +1,4 @@
 from bson.son import SON
-from gevent_handlers.events import EventListeners
-from requests import stream_events_handler
 
 
 class InitData():

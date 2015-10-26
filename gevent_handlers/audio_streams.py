@@ -38,17 +38,21 @@ class AudioStreamReader(Greenlet):
     def _run(self):
         print "loading audio stream :: ", self.stream_id
         while(True):
-            song_path = "/"*31 + "devadas2006/06thalusa.mp3"
+            song_url_path = None
             current_poll = Poll.get_current_poll(self.stream_id)
             if(current_poll):
                 song = current_poll.get_highest_poll_song(self.stream_id)
                 if(song):
-                    song_path = song.path
+                    song_url_path = song.path
                     
             poll = Poll.create_next_poll(self.stream_id)
             
-            
-            song_url_path="http://storage.googleapis.com/telugubeats_files/music/Telugu/"+urllib.quote(song_path[31:])
+            if(not song_url_path):
+                song_url_path = "http://storage.googleapis.com/telugubeats_files/music/Telugu/devisri%20prasad/arya/amalapuram.mp3"
+                
+            if(song_url_path.startswith("/Users/abhinav/Desktop/Telugu//")):                    
+                song_url_path="http://storage.googleapis.com/telugubeats_files/music/Telugu/"+urllib.quote(song_url_path[31:])
+                
             print "playing::", song_url_path
             self.fd = RemoteUrlFileObject(song_url_path)
             

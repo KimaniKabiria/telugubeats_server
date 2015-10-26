@@ -1,9 +1,10 @@
-from models import initDb
+
 import json
 from models.album import Album
 from models.song import Song, SongsMeta
 from models.polls import Poll
 from mongoengine.document import Document
+from models import initDb
 
 initDb()
 
@@ -64,6 +65,22 @@ def set_max_track():
     m.save()
 
 
-insert_init_data()
+#insert_init_data()
+
+
+def add_album(movie_name , image_url , directors=None , music_directors=None , actors = None):
+    if(not movie_name or not image_url or not "http" in image_url):
+        print "need movie name and imageurl"
+        return
+        
+    a = Album()
+    a.name = movie_name
+    a.directors = directors
+    a.music_directors = music_directors
+    a.image_url = image_url
+    a.actors = actors
+    print a.save()
+    
+
 
 #get_max_track()

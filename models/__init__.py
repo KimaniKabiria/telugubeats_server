@@ -3,7 +3,6 @@ from mongoengine.document import Document
 from models.song import Song
 from models.polls import Poll
 from responses.stream import InitData
-from requests import stream_events_handler
 
 
 
@@ -13,7 +12,7 @@ def initDb():
                        "ip":"104.155.234.161",# "db.quizapp.appsandlabs.com",
                        "port": 27017,
                        "username": "abhinav",
-                       "password":"xxxxxxxx"
+                       "password":"xxxxx"
        }
     dbConnection = connect(dbServer["dbName"], host=dbServer["ip"], port=dbServer["port"], username=dbServer["username"],password=dbServer["password"])
     
@@ -29,6 +28,7 @@ class BaseNoOidDocument(object):
     
     
 def get_init_data(stream_id, user=None):
+    from requests import stream_events_handler
     song = Song.objects().order_by("-last_played")[0]
     
     poll = Poll.get_current_poll(stream_id)
