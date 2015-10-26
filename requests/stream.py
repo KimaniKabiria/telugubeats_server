@@ -9,6 +9,7 @@ from requests.users import send_init_data
 from gevent_handlers import audio_streams
 from models import get_init_data
 from bson import json_util
+from enums import Event
 
 
 
@@ -22,7 +23,9 @@ def do_stream_request(socket, stream_id, stream_request_type, user = None):
         if(stream_request_type=="events_renew"):            
             stream_events_handler.add_listener(stream_id, socket)
             init_data = get_init_data(stream_id, user)
-            stream_events_handler.send_event(stream_id, socket, json_util.dumps(init_data.to_son()))
+            
+            reset_event = {"event_id": Event.RESET_POLLS_AND_SONG, "payload":json_util.dumps(init_data.to_son()), "from_user": user}
+            stream_events_handler.send_event(stream_id, socket, json_util.dumps(reset_event).replace("\r\n", "\n\n"))
             
         elif(stream_request_type=="audio"):
             # periodically send data , most important
