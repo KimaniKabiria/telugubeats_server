@@ -61,7 +61,7 @@ class AudioStreamReader(Greenlet):
             reset_data.poll = poll
             reset_data.n_user = 1000+len( stream_events_handler.event_listeners[self.stream_id])
             reset_data.current_song  = song
-            song.last_played = datetime.now()
+            song.last_played = datetime.utcnow()
             song.save()
             event_data = json_util.dumps(reset_data.to_son())
             

@@ -34,7 +34,7 @@ from requests.polls import do_poll
 from requests.users import do_register_user, do_dedicate_event
 import urllib
 from models import initDb
-from requests import init_stream_event_handlers
+from requests import init_stream_event_handlers, print_stats
 from requests.chat import do_chat_event
 
 gevent.monkey.patch_all()
@@ -68,6 +68,7 @@ request_handlers = [(re.compile("/stream/([^/]+)/(.*)")  ,  do_stream_request), 
                     ( re.compile("/user/login") , do_register_user), #"/poll/telugu/123123/12312312"
                     ( re.compile("/dedicate/(.+)") , do_dedicate_event),
                     ( re.compile("/chat/(.+)") , do_chat_event),
+                    ( re.compile("/stats") , print_stats),
                    ]
 
 

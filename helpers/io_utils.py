@@ -37,3 +37,16 @@ class BufferedFile(object):
         self.offset = offset
         if offset < self.len:
             self.data.seek(offset)
+            
+            
+            
+def response_write(socket, data):
+    n = 0
+    l = len(data)
+    while(n<l):
+        n += socket.send(data[n:])
+        print n
+        if(n<0):
+            break
+        
+    socket.close()
