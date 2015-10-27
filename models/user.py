@@ -14,7 +14,7 @@ from bson.objectid import ObjectId
 
 class User(Document):
     name = StringField()
-    device_id = StringField(required=True)
+    device_id = StringField()
     email_id = EmailField()
     picture_url = StringField()  # cdn link
     cover_url = StringField()

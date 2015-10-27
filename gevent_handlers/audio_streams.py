@@ -28,8 +28,8 @@ class AudioStreamReader(Greenlet):
     #bit rate = (319/8)*1024 bytes/s
     #
     
-    
-    sleep_time = Buffer.CHUNK_BYTE_SIZE/((128.1/8)*1024) #128kbps
+    bit_rate = ((128.0/8)*1024)#128kbps in bytes per second
+    sleep_time = (Buffer.CHUNK_BYTE_SIZE*1.0)/bit_rate
     # write to telugu buffer
     def __init__(self, stream_id):
         Greenlet.__init__(self)
