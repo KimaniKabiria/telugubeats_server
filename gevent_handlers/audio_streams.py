@@ -45,7 +45,14 @@ class AudioStreamReader(Greenlet):
                 if(song):
                     song_url_path = song.path
                     
-            poll = Poll.create_next_poll(self.stream_id)
+            retry_poll_creation = 3
+            while(retry_poll_creation>0):
+                poll = Poll.create_next_poll(self.stream_id)
+                if(poll!=None):
+                    break
+                retry_poll_creation-=1
+            if(poll==None):
+                continue
             
             if(not song_url_path):
                 song_url_path = "http://storage.googleapis.com/telugubeats_files/music/Telugu/devisri%20prasad/arya/amalapuram.mp3"

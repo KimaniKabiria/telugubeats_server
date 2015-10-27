@@ -4,6 +4,7 @@ from models.song import Song, SongsMeta
 from mongoengine.document import Document
 import random
 import datetime
+from mongoengine.errors import MultipleObjectsReturned, DoesNotExist
 
 
 
@@ -76,19 +77,27 @@ class Poll(Document):
         # create poll item with the stream Id
         #return 
         total_songs = SongsMeta.objects().get().n
-        lst = set()
-        while(len(lst)<7):
-            lst.add(random.randint(0,total_songs))
+            
         poll = Poll()
         poll.stream_id = stream_id
         poll.save()
         poll_items = []
         try:
-            for i in lst:
-                song = Song.objects(track_n=i).get()
-                poll_item =  PollItem(song = song , poll_count =0 , poll= poll)
-                poll_items.append(poll_item)
-        
+            temp_track_hash = {}
+            while(len(poll_items)<7):
+                try:
+                    random_track_n = random.randint(0,total_songs)
+                    if(temp_track_hash.get(random_track_n, None)): continue# dont repeat tracks
+                    
+                    song = Song.objects(track_n=random_track_n).get()
+                    poll_item =  PollItem(song = song , poll_count =0 , poll= poll)
+                    poll_items.append(poll_item)
+                    temp_track_hash[random_track_n] = True
+                    
+                except (MultipleObjectsReturned, DoesNotExist) as ex:
+                    pass
+                
+                    
             for poll_item in poll_items:
                 poll_item.save()
             
@@ -97,6 +106,7 @@ class Poll(Document):
         except Exception as ex:
             print ex
             poll.delete()
+            poll = None
             for poll_item in poll_items:
                 poll_item.delete()
             

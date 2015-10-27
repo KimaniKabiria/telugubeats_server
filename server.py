@@ -90,7 +90,7 @@ def handle_connection(socket, address):
         request_type , request_path , http_version = request_line.split(" ")
     except:
         socket.close()
-    print "new request", request_path
+    print "new request", request_line
     headers = {}
     while(True):
         l = read_line(socket)
