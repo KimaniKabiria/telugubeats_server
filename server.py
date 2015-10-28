@@ -112,7 +112,7 @@ def handle_connection(socket, address):
                 data +=bts
             post_data = urlparse.parse_qs(data)
     ##app specific headers
-    auth_key = headers.get("auth_key", None)
+    auth_key = headers.get("auth-key", None)
     user = None
     if(auth_key):
         #decode and get user
