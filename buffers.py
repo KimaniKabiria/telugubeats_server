@@ -20,10 +20,8 @@ class Buffer():
     def size(self):
         return abs(self.h-self.b)
 
-    def get_chunk(self, index):
-        if(self.size()>0) :  
-            return self._byte_chunks[index%Buffer.SIZE]
-        return None
+    def get_chunk(self, index):# no size check
+        return self._byte_chunks[index%Buffer.SIZE]
     
     def get_current_head(self):
         return self.h-1
