@@ -17,6 +17,7 @@ class PollItem(Document):
     
     def to_son(self, use_db_field=True, fields=None):
         data = SON()
+        data["_id"] = {"$oid" : self.id }
         data["poll_count"] = self.poll_count
         data["song"] = self.song.to_son()
         return data
@@ -41,6 +42,7 @@ class Poll(Document):
     
     def to_son(self, use_db_field=True, fields=None):
         data = SON()
+        data["_id"] = {"$iod":self.id}
         data["stream_id"] = self.stream_id
         data["created_at"] = self.created_at
         data["poll_items"] = [None for x in range(len(self.poll_items))]
