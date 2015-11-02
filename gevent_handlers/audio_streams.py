@@ -14,6 +14,9 @@ from bson import json_util
 from datetime import datetime
 import urllib
 from beta.seekable_file_block_url import RemoteUrlFileObject
+from config import IS_TEST_BUILD
+from models.song import Song
+import random
 
 
 
@@ -22,35 +25,51 @@ class AudioStreamReader(Greenlet):
     fd = None
     id3 = None
     last_time_stamp  = time.time()
-    stream_buffers = {
-                      "telugu": [Buffer() , None]
-    }
+    
+    ########## static stuff 
+    stream_buffers = {}
     #bit rate = (319/8)*1024 bytes/s
     #
     
-    bit_rate = ((128.0/8)*1024)#128kbps in bytes per second
-    sleep_time = (Buffer.CHUNK_BYTE_SIZE*1.0)/bit_rate
+    byte_rate = None#128kbps in bytes per second
+    sleep_time = None
     # write to telugu buffer
-    def __init__(self, stream_id):
+    def __init__(self, stream_id , bit_rate_in_kbps = 128.0):
         Greenlet.__init__(self)
         self.stream_id = stream_id
-        self.buffer = AudioStreamReader.stream_buffers[self.stream_id][0]
+        
+        if(not AudioStreamReader.stream_buffers.get(self.stream_id, None)):
+            buffer = Buffer()
+            byte_rate = ((bit_rate_in_kbps/8)*1024)
+            sleep_time = (buffer.CHUNK_BYTE_SIZE*1.0)/byte_rate
+            AudioStreamReader.stream_buffers[stream_id] = [buffer , byte_rate, sleep_time]
+            
+            
+        self.buffer, self.byte_rate , self.sleep_time  = AudioStreamReader.stream_buffers[self.stream_id]
+        
+        
     def _run(self):
         print "loading audio stream :: ", self.stream_id
         while(True):
             song_url_path = None
             current_poll = Poll.get_current_poll(self.stream_id)
             if(current_poll):
-                song = current_poll.get_highest_poll_song(self.stream_id)
+                if(not IS_TEST_BUILD):
+                    song = current_poll.get_highest_poll_song(self.stream_id)
+                else:
+                    song = Song.objects(track_n=158).get()
+                    
                 if(song):
                     song_url_path = song.path
+
                     
             retry_poll_creation = 3
             while(retry_poll_creation>0):
-                poll = Poll.create_next_poll(self.stream_id)
+                poll = Poll.create_next_poll(self.stream_id , not IS_TEST_BUILD)
                 if(poll!=None):
                     break
                 retry_poll_creation-=1
+                
             if(poll==None):
                 continue
             
@@ -73,7 +92,8 @@ class AudioStreamReader(Greenlet):
             reset_data.n_user = 1000+len( stream_events_handler.event_listeners[self.stream_id])
             reset_data.current_song  = song
             song.last_played = datetime.utcnow()
-            song.save()
+            if(not IS_TEST_BUILD):
+                song.save()
             event_data = json_util.dumps(reset_data.to_son())
             
             stream_events_handler.publish_event(self.stream_id, Event.RESET_POLLS_AND_SONG, event_data, from_user = None)
@@ -88,10 +108,10 @@ class AudioStreamReader(Greenlet):
                 while(True):
                     try:
                         cur_time = time.time()
-                        if(cur_time- self.last_time_stamp > AudioStreamReader.sleep_time):
+                        if(cur_time- self.last_time_stamp > self.sleep_time):
                             self.last_time_stamp = cur_time
-                            self.buffer.queue_chunk(self.fd.read(Buffer.CHUNK_BYTE_SIZE))
-                            gevent.sleep(AudioStreamReader.sleep_time- time.time()+self.last_time_stamp)
+                            self.buffer.queue_chunk(self.fd.read(self.buffer.CHUNK_BYTE_SIZE))
+                            gevent.sleep(self.sleep_time- time.time()+self.last_time_stamp)
                     except EOFError:
                         self.fd.close()
                         break        
@@ -102,13 +122,13 @@ class AudioStreamReader(Greenlet):
 def handle_audio_stream(stream_id, socket):    
     for i in config.RESPONSE:
         socket.send(i)
-    buffer = AudioStreamReader.stream_buffers[stream_id][0]
+    buffer, byte_rate , sleep_time = AudioStreamReader.stream_buffers[stream_id]
     last_sent_time = time.time() # 4 chunks once  #16*chunks per second #bitrate , 16kbytes per second =>
-    current_index = max(0 , buffer.get_current_head()-4)
+    current_index =  buffer.get_current_head()-4
     
     while True:
         cur_time = time.time()
-        if(cur_time - last_sent_time> AudioStreamReader.sleep_time):
+        if(cur_time - last_sent_time> sleep_time):
             last_sent_time = cur_time
             chunk = buffer.get_chunk(current_index)
             #chunk = 32kb = > 16kbytes/sec => 1 chunks per 2 seconds 
@@ -118,12 +138,13 @@ def handle_audio_stream(stream_id, socket):
                     while(n<len(chunk)):    
                         n += socket.send(chunk[n:])
                     current_index+=1
-                    gevent.sleep(AudioStreamReader.sleep_time - time.time()+last_sent_time)
+                    current_index%=buffer.SIZE
+                    gevent.sleep( sleep_time - time.time()+last_sent_time)
                 except:
                     #client disconnected
                     break
             else:
-                gevent.sleep(AudioStreamReader.sleep_time)
+                gevent.sleep( sleep_time)
         else:
             gevent.sleep(1)
         

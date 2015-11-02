@@ -99,6 +99,14 @@ def test5():
     print type(b.id)
     print A.objects(b =  b.id).get().to_json()
     
+
+def test_6():
+    #save in db offlise for create_next_poll
+    initDb()
+    poll = Poll.create_next_poll("telugu", False)
+    print poll
+    print json_util.dumps(poll.to_son())
+    
     
 #test4(False)
-test5()   
+test_6()   

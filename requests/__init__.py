@@ -24,4 +24,5 @@ def print_stats(socket, user = None):
     </html>'''
     socket.send(OK_200)
     response_write(socket, html)
+    socket.close()
     

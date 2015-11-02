@@ -32,6 +32,7 @@ def send_init_data(socket , stream_id, user=None):
     socket.send(OK_200)
     
     response_write(socket, init_data)
+    socket.close()
     
 def do_dedicate_event(socket, stream_id,  post=None , user = None):
     user_name2 = post.get("user_name",["somebody"])

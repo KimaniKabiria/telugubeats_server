@@ -8,6 +8,7 @@ from bson.son import SON
 from config import OK_200
 from models.events import StreamEvent
 from enums import Event
+from helpers.io_utils import response_write
 
 
 
@@ -27,25 +28,19 @@ class EventListeners:
         '''
         TODO : start reading from master server
         '''
-    def add_listener(self, stream_id , socket):
+    def add_listener(self, stream_id , socket , send_init_headers=True):
         if(self.event_listeners.get(stream_id, None)==None):
             self.init_stream_listeners(stream_id)
-            
-        socket.send(OK_200)
+        
+        if(send_init_headers):
+            response_write(socket, OK_200)
         self.event_listeners[stream_id][socket] = True
     
     
     def send_event(self, stream_id , socket, data_to_send):
         try:
-            n = 0 
-            while(n<len(data_to_send)):    
-                n += socket.send(data_to_send[n:])
-                
-                
-            stop_chars = "\r\n\r\n"        
-            n = 0
-            while(n<len(stop_chars)):    
-                n += socket.send(stop_chars[n:])
+            response_write(socket , data_to_send)
+            response_write(socket,"\r\n\r\n")
         except:
             del self.event_listeners[stream_id][socket] # remove the socket
     
