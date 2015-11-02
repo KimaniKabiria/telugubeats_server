@@ -19,6 +19,7 @@ class PollItem(Document):
         data = SON()
         data["_id"] = self.id
         data["poll_count"] = self.poll_count
+        data["poll"] = self.poll
         data["song"] = self.song.to_son()
         return data
     
@@ -48,6 +49,7 @@ class Poll(Document):
         data["poll_items"] = [None for x in range(len(self.poll_items))]
         for i in range(len(self.poll_items)):
             data["poll_items"][i] = self.poll_items[i].to_son()
+            data["poll_items"][i]["poll"] = self.id
         return data
     
     @classmethod
