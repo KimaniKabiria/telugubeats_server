@@ -11,6 +11,8 @@ from models import initDb
 from mongoengine.document import Document
 from mongoengine.fields import ReferenceField, IntField
 from bson.dbref import DBRef
+import array
+import buffers
 
 
 initDb()
@@ -107,6 +109,27 @@ def test_6():
     print poll
     print json_util.dumps(poll.to_son())
     
+def test_7():
+    #random , test id , mongo field
+    initDb()
+    poll = Poll.get_current_poll("telugu")
+    print str(poll.poll_items[0].id)
+    print json_util.dumps(poll.poll_items[0].id)
+    print json_util.dumps(poll.poll_items[0].poll.id)
     
+    
+    
+def test_8():
+    b = buffers.Buffer(10 , 1)
+    b.size = 10
+    b.chunk_byte_size = 1
+    for i in range(1,20):
+        b.queue_chunk(i)
+        print b._byte_chunks
+    
+    
+    
+    
+        
 #test4(False)
-test_6()   
+test_8()   

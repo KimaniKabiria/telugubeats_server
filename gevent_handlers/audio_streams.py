@@ -41,7 +41,7 @@ class AudioStreamReader(Greenlet):
         if(not AudioStreamReader.stream_buffers.get(self.stream_id, None)):
             buffer = Buffer()
             byte_rate = ((bit_rate_in_kbps/8)*1024)
-            sleep_time = (buffer.CHUNK_BYTE_SIZE*1.0)/byte_rate
+            sleep_time = (buffer.chunk_byte_size*1.0)/byte_rate
             AudioStreamReader.stream_buffers[stream_id] = [buffer , byte_rate, sleep_time]
             
             
@@ -110,7 +110,7 @@ class AudioStreamReader(Greenlet):
                         cur_time = time.time()
                         if(cur_time- self.last_time_stamp > self.sleep_time):
                             self.last_time_stamp = cur_time
-                            self.buffer.queue_chunk(self.fd.read(self.buffer.CHUNK_BYTE_SIZE))
+                            self.buffer.queue_chunk(self.fd.read(self.buffer.chunk_byte_size))
                             gevent.sleep(self.sleep_time- time.time()+self.last_time_stamp)
                     except EOFError:
                         self.fd.close()
@@ -138,7 +138,7 @@ def handle_audio_stream(stream_id, socket):
                     while(n<len(chunk)):    
                         n += socket.send(chunk[n:])
                     current_index+=1
-                    current_index%=buffer.SIZE
+                    current_index%=buffer.size
                     gevent.sleep( sleep_time - time.time()+last_sent_time)
                 except:
                     #client disconnected
@@ -146,5 +146,5 @@ def handle_audio_stream(stream_id, socket):
             else:
                 gevent.sleep( sleep_time)
         else:
-            gevent.sleep(1)
+            gevent.sleep(sleep_time)
         

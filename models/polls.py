@@ -70,7 +70,6 @@ class Poll(Document):
         
         return mx_song
                 
-                
     @classmethod
     def get_current_poll(cls, stream_id):
         try:
