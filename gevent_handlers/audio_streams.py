@@ -125,13 +125,19 @@ def handle_audio_stream(stream_id, socket):
     buffer, byte_rate , sleep_time = AudioStreamReader.stream_buffers[stream_id]
     last_sent_time = time.time() # 4 chunks once  #16*chunks per second #bitrate , 16kbytes per second =>
     current_index =  buffer.get_current_head()-4
-    
+    max_chunk_diff = 20
     while True:
         cur_time = time.time()
         if(cur_time - last_sent_time> sleep_time):
             last_sent_time = cur_time
             chunk = buffer.get_chunk(current_index)
             #chunk = 32kb = > 16kbytes/sec => 1 chunks per 2 seconds 
+            if((buffer.h)%buffer.size==current_index):# should not overtake
+                chunk = None
+            
+                
+                
+            
             if(chunk):
                 try:
                     n = 0

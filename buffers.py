@@ -1,5 +1,5 @@
 class Buffer():
-#     SIZE  = 2*512 # no of blocks , that contain chunks 32 MB
+#     SIZE  = 2*1024 # no of blocks , that contain chunks 32 MB
 #     CHUNK_BYTE_SIZE = 32*1024 # 32kb
 #     _byte_chunks = [0 for i in range(SIZE)]
     size  = None
@@ -8,7 +8,7 @@ class Buffer():
     h = 0
     b = 0 # from back till h    
     
-    def __init__(self , size=2*512, chunk_byte_size=32*1024):
+    def __init__(self , size=2*1024, chunk_byte_size=32*1024):
         self.size = size
         self.chunk_byte_size = chunk_byte_size
         self._byte_chunks = [0 for i in range(size)]
