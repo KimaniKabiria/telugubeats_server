@@ -20,6 +20,7 @@ import random
 
 
 
+
 class AudioStreamReader(Greenlet):
     stream_id = None
     fd = None
@@ -43,8 +44,7 @@ class AudioStreamReader(Greenlet):
             byte_rate = ((bit_rate_in_kbps/8)*1024)
             sleep_time = (buffer.chunk_byte_size*1.0)/byte_rate
             AudioStreamReader.stream_buffers[stream_id] = [buffer , byte_rate, sleep_time]
-            
-            
+                        
         self.buffer, self.byte_rate , self.sleep_time  = AudioStreamReader.stream_buffers[self.stream_id]
         
         
@@ -54,15 +54,12 @@ class AudioStreamReader(Greenlet):
             song_url_path = None
             current_poll = Poll.get_current_poll(self.stream_id)
             if(current_poll):
-                if(not IS_TEST_BUILD):
-                    song = current_poll.get_highest_poll_song(self.stream_id)
-                else:
-                    song = Song.objects(track_n=158).get()
-                    
-                if(song):
-                    song_url_path = song.path
+                song = current_poll.get_highest_poll_song(self.stream_id)
+            if(IS_TEST_BUILD):
+                song = Song.objects(track_n=158).get()
 
-                    
+
+            song_url_path = song.path 
             retry_poll_creation = 3
             while(retry_poll_creation>0):
                 poll = Poll.create_next_poll(self.stream_id , not IS_TEST_BUILD)
@@ -104,8 +101,19 @@ class AudioStreamReader(Greenlet):
                 self.id3 = id3reader.Reader(self.fd)
                 if isinstance(self.id3.header.size, int): # read out the id3 data
                     self.fd.seek(self.id3.header.size)
+                    
+                    
+                private_bit_set_header = bytearray([0xFF, 0xFB, 0x93, 0x64])              
                 
+                mp3_frame_private= bytearray()
+                mp3_frame_private.extend(private_bit_set_header)
+                mp3_frame_private.extend(bytearray([chr(0) for x in range(414)]))
+                mp3_frame_private.extend(private_bit_set_header)
+                
+                self.buffer.queue_chunk(mp3_frame_private)
+                    
                 while(True):
+                    
                     try:
                         cur_time = time.time()
                         if(cur_time- self.last_time_stamp > self.sleep_time):
@@ -113,6 +121,12 @@ class AudioStreamReader(Greenlet):
                             self.buffer.queue_chunk(self.fd.read(self.buffer.chunk_byte_size))
                             gevent.sleep(self.sleep_time- time.time()+self.last_time_stamp)
                     except EOFError:
+                        # 1111 1111 1111 1011 1001 0011 0110 0100
+                        # -289948
+                        
+                        
+                        gevent.sleep(0.052)
+
                         self.fd.close()
                         break        
             except Exception as e:
@@ -134,10 +148,7 @@ def handle_audio_stream(stream_id, socket):
             #chunk = 32kb = > 16kbytes/sec => 1 chunks per 2 seconds 
             if((buffer.h)%buffer.size==current_index):# should not overtake
                 chunk = None
-            
-                
-                
-            
+         
             if(chunk):
                 try:
                     n = 0

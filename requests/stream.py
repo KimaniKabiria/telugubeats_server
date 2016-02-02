@@ -16,6 +16,16 @@ from config import OK_200
 
 
 
+
+def audio_stream(socket, stream_id):
+    audio_streams.handle_audio_stream(stream_id, socket)
+    
+
+def events_stream(socket, stream_id, should_renew=None):
+    pass    
+    
+    
+
 def do_stream_request(socket, stream_id, stream_request_type, user = None):
     
         if(stream_request_type=="events"):

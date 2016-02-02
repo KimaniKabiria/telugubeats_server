@@ -1,0 +1,32 @@
+1)  installed stack driver on the instance with mongodb running, by downloading a installation script and running it with 
+api key , from https://app.google.stackdriver.com/settings/apikeys/
+
+- installing , https://cloud.google.com/monitoring/agent/install-agent
+- https://cloud.google.com/monitoring/agent/plugins/mongodb
+
+
+2) onxe installed , need to add mongo plugin to stackdriver
+3) restart, see if user auth is needed or not needed , if working correctly
+
+
+
+
+
+# started mongo instance , 
+
+nohup mongod --dbpath ./dbdata &
+
+
+# to create an user
+user quizapp;
+db.createUser(
+    {
+      user: "quizapp",
+      pwd: "warrior_within",
+      roles: [
+         { role: "readWrite", db: "quizapp" }
+      ]
+    }
+)
+
+

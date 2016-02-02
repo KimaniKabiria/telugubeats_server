@@ -2,6 +2,13 @@ server_address = '0.0.0.0'
 server_port = 8888
 
 
+dbServer = {"dbName":"telugubeats",
+                   "ip":"localhost",# "db.quizapp.appsandlabs.com",
+                   "port": 27017,
+                   "username": "abhinav",
+                   "password":""
+   }
+
 
 SERVER_SECRET = "ubjebkhelloworlddudemomiloveyou"
 CHUNKSIZE = 32*1024# 417 bytes=one frame = 1152 samples, 39frames per second , 

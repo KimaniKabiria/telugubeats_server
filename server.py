@@ -24,7 +24,7 @@ from mongoengine.connection import connect
 from bson import json_util
 from bson.son import SON
 from gevent_handlers import init_main_audio_streams
-from requests.stream import do_stream_request 
+from requests.stream import do_stream_request , audio_stream
 from mimetools import Message
 from StringIO import StringIO
 from helpers.auth import decode_signed_value
@@ -63,7 +63,8 @@ gevent.monkey.patch_all()
     
 #this should internally spawn 
 
-request_handlers = [(re.compile("/stream/([^/]+)/(.*)")  ,  do_stream_request), #stream/telugu/audio or events
+request_handlers = [(re.compile("/audio_stream/([^/]+)")  ,  audio_stream), #stream/telugu/audio or events
+                    (re.compile("/stream/([^/]+)/(.*)")  ,  do_stream_request), #stream/telugu/audio or events
                     ( re.compile("/poll/([^/]+)/([^/]+)/(.*)") , do_poll), #"/poll/telugu/123123/12312312"
                     ( re.compile("/user/login") , do_register_user), #"/poll/telugu/123123/12312312"
                     ( re.compile("/dedicate/(.+)") , do_dedicate_event),
