@@ -10,6 +10,10 @@ dbServer = {"dbName":"telugubeats",
    }
 
 
+
+
+host_id = None
+
 SERVER_SECRET = "ubjebkhelloworlddudemomiloveyou"
 CHUNKSIZE = 32*1024# 417 bytes=one frame = 1152 samples, 39frames per second , 
 

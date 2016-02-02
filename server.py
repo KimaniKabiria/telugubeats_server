@@ -24,7 +24,8 @@ from mongoengine.connection import connect
 from bson import json_util
 from bson.son import SON
 from gevent_handlers import init_main_audio_streams
-from requests.stream import do_stream_request , audio_stream
+from requests.stream import do_stream_request , audio_stream,\
+    listen_audio_stream, listen_events, get_stream_info, get_current_poll
 from mimetools import Message
 from StringIO import StringIO
 from helpers.auth import decode_signed_value
@@ -63,10 +64,16 @@ gevent.monkey.patch_all()
     
 #this should internally spawn 
 
-request_handlers = [(re.compile("/audio_stream/([^/]+)")  ,  audio_stream), #stream/telugu/audio or events
-                    (re.compile("/stream/([^/]+)/(.*)")  ,  do_stream_request), #stream/telugu/audio or events
+request_handlers = [(re.compile("/listen_audio_stream/([^/]+)")  ,  listen_audio_stream), #stream/telugu/audio or events
+                    (re.compile("/listen_events/([^/]+)")  ,  listen_events), #stream/telugu/audio or events                    
+                    
+                    ( re.compile("/get_stream_info/([^/]+)") , get_stream_info), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/get_current_poll/([^/]+)") , get_current_poll), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/get_last_events/([^/]+)") , get_last_events), #"/poll/telugu/123123/12312312"
+                    
+                                                                                
                     ( re.compile("/poll/([^/]+)/([^/]+)/(.*)") , do_poll), #"/poll/telugu/123123/12312312"
-                    ( re.compile("/user/login") , do_register_user), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/user/login") , do_register_user),
                     ( re.compile("/dedicate/(.+)") , do_dedicate_event),
                     ( re.compile("/chat/(.+)") , do_chat_event),
                     ( re.compile("/stats") , print_stats),
