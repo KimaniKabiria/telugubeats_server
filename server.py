@@ -17,26 +17,26 @@ import config
 import gevent
 import re
 from buffers import Buffer
-from gevent_handlers.audio_streams import AudioStreamReader, handle_audio_stream
 from models.polls import PollItem, Poll
 from models.song import Song
 from mongoengine.connection import connect
 from bson import json_util
 from bson.son import SON
-from gevent_handlers import init_main_audio_streams
-from requests.stream import do_stream_request , audio_stream,\
-    listen_audio_stream, listen_events, get_stream_info, get_current_poll
+from requests.stream import listen_audio_stream, listen_events, get_stream_info,\
+    get_last_events
 from mimetools import Message
 from StringIO import StringIO
 from helpers.auth import decode_signed_value
 from models.user import User
 import urlparse
-from requests.polls import do_poll
+from requests.polls import do_poll, get_current_poll
 from requests.users import do_register_user, do_dedicate_event
 import urllib
 from models import initDb
-from requests import init_stream_event_handlers, print_stats
+from requests import print_stats
 from requests.chat import do_chat_event
+from handlers.streams import Stream
+from logger import logger
 
 gevent.monkey.patch_all()
 
@@ -69,10 +69,13 @@ request_handlers = [(re.compile("/listen_audio_stream/([^/]+)")  ,  listen_audio
                     
                     ( re.compile("/get_stream_info/([^/]+)") , get_stream_info), #"/poll/telugu/123123/12312312"
                     ( re.compile("/get_current_poll/([^/]+)") , get_current_poll), #"/poll/telugu/123123/12312312"
-                    ( re.compile("/get_last_events/([^/]+)") , get_last_events), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/get_last_events/([^/]+)/(.*)") , get_last_events), #"/poll/telugu/123123/12312312"
                     
                                                                                 
                     ( re.compile("/poll/([^/]+)/([^/]+)/(.*)") , do_poll), #"/poll/telugu/123123/12312312"
+                    
+                    
+                    
                     ( re.compile("/user/login") , do_register_user),
                     ( re.compile("/dedicate/(.+)") , do_dedicate_event),
                     ( re.compile("/chat/(.+)") , do_chat_event),
@@ -147,8 +150,17 @@ if __name__ == "__main__":
     initDb()
     #initialize reading and file decoder
     #keep reading streams , auto reconnecting 
-    init_main_audio_streams()
-    init_stream_event_handlers()
+    
+    stream = Stream.objects(stream_id="telugu")
+    if(stream):
+        stream = stream[0]
+    else:
+        stream = Stream(stream_id="telugu", is_special_song_stream=True)
+        stream.save()
+
+    stream.initialize()
+    
+    logger.debug("stream initialized")
     server = StreamServer(
     ('', 8888), handle_connection)
     

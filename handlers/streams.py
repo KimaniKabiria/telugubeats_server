@@ -4,12 +4,12 @@ import id3reader
 import array
 import os
 import gevent
+from gevent.queue import Queue
 from buffers import Buffer
 import config
 from models.polls import Poll
-from requests import stream_events_handler
+
 from enums import Event
-from responses.stream import InitData
 from bson import json_util
 from datetime import datetime
 import urllib
@@ -26,6 +26,14 @@ from helpers.io_utils import response_write
 
 streams = {}
 
+
+
+def audio_publishing_thread(func):
+    def wrapper(stream, *args):
+        stream.audio_publishing_threads.append(Greenlet.spawn(func, stream , *args))
+    return wrapper
+
+
 #has audio stream , has events stream and some numbers associated with it
 class Stream(Document):
     #static data
@@ -36,7 +44,7 @@ class Stream(Document):
     # to listen or broadcast to
     hosts = ListField(StringField())
     
-    is_special_song_streaing_host = ListField()
+    is_special_song_stream = BooleanField()
     # host from where we read the data into buffer and keep broadcasting
     source_host = StringField()
     
@@ -52,28 +60,22 @@ class Stream(Document):
     event_queue = None
     last_few_events = []
     stream_buffers_info = []
-    
-    
-    
-    event_publisher_thread = None  # this is a listener model
-    
 
+    event_publisher_thread = None  # this is a listener model
     
     events_reader_thread = None
     
     audio_reader_thread = None    
-    audio_publishing_threads = None # one for each clients
-    
-    
+    audio_publishing_threads = [] # one for each clients
     
     
     
     
     def initialize(self):
-        
+        logger.debug("initializing stream " + self.stream_id)
         streams[self.stream_id] = self
                 
-        self.event_queue = gevent.queue.Queue()
+        self.event_queue = Queue()
         self.last_few_events  = StreamEvent.get_events(self.stream_id)
                 
         #start publishing to subscribers      
@@ -82,13 +84,16 @@ class Stream(Document):
         self.init_buffers()
         
         if(config.host_id != self.source_host): # is not the source , so keep reading from source host
-            self.start_reading_audio_from_source()
+            self.audio_reader_thread = Greenlet.spawn(Stream.start_reading_audio_from_source, self)
 #TODO:            self.strat_reading_events_from_source()            
+
         else:# this is the source host
-            if(self.is_special_song_streaing_host):
-                self.start_reading_from_files()
+            if(self.is_special_song_stream):
+                self.audio_reader_thread = Greenlet.spawn(Stream.start_reading_from_files, self)
+                
             else:
                 '''some user should be sending data to this host # nothing to do'''
+                
                 
 
     def init_buffers(self,bit_rate_in_kbps = 128.0):
@@ -103,9 +108,13 @@ class Stream(Document):
             self.read_into_buffer_from_db_files()
     
     def start_reading_from_files(self):
-        max_track_count = Song.objects().order_by("-track_n").get().track_n
+        logger.debug("start reading from files " + self.stream_id)
+                
+        max_track_count = Song.objects().order_by("-track_n")[0].track_n
         logger.debug("max_tracks in db "+str(max_track_count))
         logger.debug("start reading audio stream :: " + self.stream_id)
+        
+        last_sent_time_stamp = 0 # last timestamp where we sent a packet
         while(True):
             song_url_path = None
             current_poll = Poll.get_current_poll(self.stream_id)
@@ -120,7 +129,7 @@ class Stream(Document):
             
             retry_poll_creation = 3
             while(retry_poll_creation>0):
-                poll = Poll.create_next_poll(self.stream_id , not IS_TEST_BUILD)
+                poll = Poll.create_next_poll(self.stream_id)
                 if(poll!=None):
                     break
                 retry_poll_creation-=1
@@ -139,11 +148,13 @@ class Stream(Document):
             
             
             # additional info contains
+            self.title = song.title 
+            self.image = song.album.image_url
             self.additional_info = json_util.dumps(song.to_son())
             self.save()
             
-            self.publish_event(Event.NEW_SONG, json_util.dumps(song.to_son()), from_user = None)
-            self.publish_event(Event.POLLS_CHANGED, json_util.dumps(poll.to_son()), from_user = None)
+            self.publish_event(Event.NEW_SONG, str(song.id), from_user = None)
+            self.publish_event(Event.NEW_POLL, str(poll.id), from_user = None)
             logger.debug("publishing new polls and song events")
 
 
@@ -175,17 +186,17 @@ class Stream(Document):
                     i+=1
                     
                 mp3_frames_private.extend(private_bit_set_header)#additional frame to ensure previous frames are read correctly as frames
-                print mp3_frames_private
+                logger.debug("loaded new song , inserting data into private frame too")
                 self.buffer.queue_chunk(mp3_frames_private)
                     
                 while(True):
                     
                     try:
                         cur_time = time.time()
-                        if(cur_time- self.last_time_stamp > self.sleep_time):
-                            self.last_time_stamp = cur_time
+                        if(cur_time- last_sent_time_stamp > self.sleep_time):
+                            last_sent_time_stamp = cur_time
                             self.buffer.queue_chunk(self.fd.read(self.buffer.chunk_byte_size))
-                            gevent.sleep(self.sleep_time- time.time()+self.last_time_stamp)
+                            gevent.sleep(self.sleep_time- time.time()+last_sent_time_stamp)
                     except EOFError:
                         # 1111 1111 1111 1011 1001 0011 0110 0100
                         # -289948
@@ -196,19 +207,12 @@ class Stream(Document):
                         self.fd.close()
                         break        
             except Exception as e:
-                    print e
+                logger.debug("an error as occured"+ str(e))
     
     
 
 
-    @staticmethod
-    def audio_streaming_thread(func):
-        def wrapper(self, *args):            
-            self.audio_publishing_threads.append(Greenlet.spawn(func, self , *args)) 
-        
-        return wrapper
-    
-    @Stream.audio_streaming_thread
+    @audio_publishing_thread
     def stream_audio(self, socket):    
         for i in config.RESPONSE:
             socket.send(i)
@@ -260,18 +264,24 @@ class Stream(Document):
     def start_publishing_events(self):
         while(True):
             # blocking call
-            event_data = self.event_queue.get()
-            event_id = event_data["event_id"]
-            data_to_send = json_util.dumps(event_data).replace("\r\n", "\n\n")
+            stream_event = self.event_queue.get()
                 
             if(len(self.last_few_events)>20):
                 self.last_few_events.pop(0)
-                
-            StreamEvent.add(self.stream_id, data_to_send)
+                            
+            self.last_few_events.append(stream_event)
+            
+            data_to_send = stream_event.to_json()
+
             for socket in self.event_listeners:
                 # send data in parallel ?
                 Greenlet.spawn(Stream.send_event , self, socket, data_to_send)
     
+    def publish_event(self, event_id,  event_data , from_user=None):
+        stream_event  = StreamEvent(event_id = event_id, data = event_data, from_user= from_user)
+        stream_event.save()
+        self.event_queue.put(stream_event)
+
 
 
 # 

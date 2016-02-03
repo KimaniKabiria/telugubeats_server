@@ -41,10 +41,11 @@ class User(Document):
         return self.to_mongo()
     
     
-    def to_short_mongo(self):
+    def to_short_son(self):
         ret = SON()
         ret["name"] = self.name
         ret["_id"] = self.id
+        
         return ret
     
     @classmethod

@@ -1,21 +1,16 @@
-from gevent_handlers.events import EventListeners
 from helpers.io_utils import response_write
 from bson import json_util
 import json
 from config import OK_200
+from handlers.streams import streams
 
 
 ## stream requesats init
-stream_events_handler = EventListeners()
 
 
-
-def init_stream_event_handlers():
-    stream_events_handler.init_stream_listeners("telugu")
     
-    
-def print_stats(socket, user = None):
-    live_sockets = stream_events_handler.event_listeners
+def print_stats(socket, stream_id="telugu", user = None):
+    live_sockets = streams.get(stream_id).event_listeners
     stats = {"live users : ":map(lambda x : {x: len(live_sockets[x])} , live_sockets.keys())}
     html = '''<html>
         <body>

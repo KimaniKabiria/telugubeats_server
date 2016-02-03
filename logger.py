@@ -6,7 +6,7 @@ Created on Feb 2, 2016
 import logging
 
 # create logger
-logger = logging.getLogger('simple_example')
+logger = logging.getLogger('chaiCafe')
 logger.setLevel(logging.DEBUG)
 
 # create console handler and set level to debug

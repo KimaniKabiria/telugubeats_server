@@ -6,6 +6,7 @@ import random
 import datetime
 from mongoengine.errors import MultipleObjectsReturned, DoesNotExist
 from bson.son import SON
+from bson import json_util
 
 
 
@@ -52,6 +53,9 @@ class Poll(Document):
             data["poll_items"][i]["poll"] = self.id
         return data
     
+    def to_json(self):
+        json_util.dumps(self.to_son())
+    
     @classmethod
     def get_highest_poll_song(cls, stream_id):
         poll = cls.get_current_poll(stream_id)
@@ -59,7 +63,6 @@ class Poll(Document):
         mx_song = None
         for poll_item in poll.poll_items:
             poll_item.song = Song.objects(id=poll_item.song.id).get()
-            print poll_item.song.title , poll_item.poll_count
             
             if(poll_item.poll_count>=mx):
                 if(poll_item.poll_count==mx):

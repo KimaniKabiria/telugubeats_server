@@ -1,7 +1,9 @@
 
 
 class Event:
+    
     POLLS_CHANGED = "POLLS_CHANGED"
     DEDICATE = "DEDICATE"
     CHAT_MESSAGE = "CHAT_MESSAGE"
     NEW_SONG = "NEW_SONG"
+    NEW_POLL = "NEW_POLL"
