@@ -43,7 +43,7 @@ class Stream(Document):
     is_live = BooleanField()
     # to listen or broadcast to
     hosts = ListField(StringField())
-    
+    description = StringField()
     is_special_song_stream = BooleanField()
     # host from where we read the data into buffer and keep broadcasting
     source_host = StringField()
@@ -140,7 +140,7 @@ class Stream(Document):
             if(not song_url_path):
                 song_url_path = "http://storage.googleapis.com/telugubeats_files/music/Telugu/devisri%20prasad/arya/amalapuram.mp3"
                 
-            if(song_url_path.startswith("/Users/abhinav/Desktop/Telugu//")):                    
+            if(song_url_path.startswith("/Users/abhinav/Desktop/Telugu//")):
                 song_url_path="http://storage.googleapis.com/telugubeats_files/music/Telugu/"+urllib.quote(song_url_path[31:])
                 
             logger.debug("playing ::" +song.title)
@@ -148,7 +148,7 @@ class Stream(Document):
             
             
             # additional info contains
-            self.title = song.title 
+            self.title = song.title
             self.image = song.album.image_url
             self.additional_info = json_util.dumps(song.to_son())
             self.save()
@@ -159,11 +159,10 @@ class Stream(Document):
 
 
             song.last_played = datetime.utcnow()
-            if(not IS_TEST_BUILD):
-                song.save()
+            song.save()
 
             
-            song_info_json_string = json_util.dumps(song.to_son())
+            stream_info_json = json_util.dumps(self.to_son())
             try:
                 self.id3 = id3reader.Reader(self.fd)
                 if isinstance(self.id3.header.size, int): # read out the id3 data
@@ -171,12 +170,12 @@ class Stream(Document):
                     
                 #insert a private frame with song_json_embedded
                 private_bit_set_header = bytearray([0xFF, 0xFB, 0x93, 0x64])              
-                num_song_info_chunks = (len(song_info_json_string)*1.0)/414                
+                num_song_info_chunks = (len(stream_info_json)*1.0)/414                
                 mp3_frames_private= bytearray()
                 i = 0
                 while(i<num_song_info_chunks):
                     mp3_frames_private.extend(private_bit_set_header)
-                    data_chunk = song_info_json_string[414*i:414*i+414]
+                    data_chunk = stream_info_json[414*i:414*i+414]
                     if(len(data_chunk)==414):
                         mp3_frames_private.extend(data_chunk)
                     else:
@@ -281,6 +280,9 @@ class Stream(Document):
         stream_event  = StreamEvent(event_id = event_id, data = event_data, from_user= from_user)
         stream_event.save()
         self.event_queue.put(stream_event)
+        
+    def to_son(self):
+        return self.to_mongo()
 
 
 

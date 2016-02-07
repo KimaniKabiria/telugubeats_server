@@ -37,7 +37,7 @@ def get_song_by_id(socket, song_id):
 
 
 def listen_audio_stream(socket, stream_id, user=None):
-    streams.get(stream_id).handle_audio_stream(stream_id, socket)
+    streams.get(stream_id).stream_audio(socket)
     
 #http and reader socket ?
 def listen_events(socket, stream_id, user=None):

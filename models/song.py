@@ -30,7 +30,7 @@ class Song(Document):
         return data
     
     def to_json(self):
-        return json_util.dumps(self.to_son()))
+        return json_util.dumps(self.to_son())
     
 class SongsMeta(Document):
     n = IntField()

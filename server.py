@@ -23,13 +23,13 @@ from mongoengine.connection import connect
 from bson import json_util
 from bson.son import SON
 from requests.stream import listen_audio_stream, listen_events, get_stream_info,\
-    get_last_events
+    get_last_events, get_song_by_id
 from mimetools import Message
 from StringIO import StringIO
 from helpers.auth import decode_signed_value
 from models.user import User
 import urlparse
-from requests.polls import do_poll, get_current_poll
+from requests.polls import do_poll, get_current_poll, get_poll_by_id
 from requests.users import do_register_user, do_dedicate_event
 import urllib
 from models import initDb
@@ -70,17 +70,17 @@ request_handlers = [(re.compile("/listen_audio_stream/([^/]+)")  ,  listen_audio
                     ( re.compile("/get_stream_info/([^/]+)") , get_stream_info), #"/poll/telugu/123123/12312312"
                     ( re.compile("/get_current_poll/([^/]+)") , get_current_poll), #"/poll/telugu/123123/12312312"
                     ( re.compile("/get_last_events/([^/]+)/(.*)") , get_last_events), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/get_song_by_id/([^/]+)") , get_song_by_id), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/get_poll_by_id/([^/]+)") , get_poll_by_id), #"/poll/telugu/123123/12312312"
                     
-                                                                                
                     ( re.compile("/poll/([^/]+)/([^/]+)/(.*)") , do_poll), #"/poll/telugu/123123/12312312"
-                    
-                    
+
                     
                     ( re.compile("/user/login") , do_register_user),
                     ( re.compile("/dedicate/(.+)") , do_dedicate_event),
                     ( re.compile("/chat/(.+)") , do_chat_event),
                     ( re.compile("/stats") , print_stats),
-                   ]
+                ]
 
 
 
@@ -101,7 +101,7 @@ def handle_connection(socket, address):
         request_type , request_path , http_version = request_line.split(" ")
     except:
         socket.close()
-    print "new request", request_line
+    logger.debug("new request" +  request_line)
     headers = {}
     while(True):
         l = read_line(socket)

@@ -24,7 +24,7 @@ def do_poll(socket, stream_id, poll_id, poll_item_id, user = None):
             changes.append(PollChangeEvent(poll_id = old_poll_item_id , count = -1 , song_title=old_song_title))
             
         p = PollChangeEvent.get_poll_changes_to_json(changes)
-        stream.publish_event(Event.POLLS_CHANGED,  p, from_user = user.to_short_son())
+        stream.publish_event(Event.POLLS_CHANGED,  p, from_user = user)
 
     socket.send(OK_200)
     socket.send("ok")
@@ -33,10 +33,10 @@ def do_poll(socket, stream_id, poll_id, poll_item_id, user = None):
 
 def get_current_poll(socket, stream_id, user=None):
     response_write(socket, OK_200)
-    response_write(socket, Poll.get_current_poll(stream_id).to_json())
+    response_write(socket, json_util.dumps(Poll.get_current_poll(stream_id).to_son()))
     socket.close()
     
 def get_poll_by_id(socket, poll_id, user=None):
     response_write(socket, OK_200)
-    response_write(socket, Poll.objects(pk=poll_id).to_json())
+    response_write(socket, json_util.dumps(Poll.objects(pk=poll_id).get().to_son()))
     socket.close()

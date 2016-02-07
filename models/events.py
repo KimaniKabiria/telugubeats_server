@@ -16,7 +16,7 @@ class StreamEvent(Document):
     data = StringField()
     from_user = ReferenceField(User) # user id here
     tags = ListField(StringField())
-    updated_at = DateTimeField(default=datetime.datetime.now)
+    updated_at = DateTimeField(default=datetime.datetime.utcnow)
     
     
     
