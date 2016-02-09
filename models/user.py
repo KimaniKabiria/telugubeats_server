@@ -113,4 +113,9 @@ class User(Document):
             return None, None, poll_item_id, new_poll_item.song.title
         
     
+    def get_user_poll_item(self, poll_id):
+        user_poll = UserPolls.objects(user= self , poll = ObjectId(poll_id))
+        if(user_poll):
+            return user_poll[0]
+        return None
     

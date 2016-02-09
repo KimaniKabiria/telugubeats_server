@@ -10,6 +10,7 @@ from helpers.io_utils import response_write
 from config import OK_200
 from handlers.streams import streams, Stream
 from models.song import Song
+from datetime import datetime
 
 
 
@@ -36,6 +37,10 @@ def get_song_by_id(socket, song_id):
 
 
 
+def forward_audio_stream(socket, stream_id, user=None):
+    streams.get(stream_id).forward_audio(socket)
+    
+
 def listen_audio_stream(socket, stream_id, user=None):
     streams.get(stream_id).stream_audio(socket)
     
@@ -44,3 +49,26 @@ def listen_events(socket, stream_id, user=None):
     response_write(socket, OK_200)
     streams.get(stream_id).add_event_listener(socket)
     
+
+
+
+def all_live_audio_streams(socket,  page , user=None):
+    page = int(page)
+    streams = [x.to_son() for x in Stream.objects(is_live=True)[page*10:page*10+10]]
+    response_write(socket, OK_200)
+    response_write(socket,json_util.dumps(streams))
+    
+
+def all_scheduled_Streams(socket, page, user=None):
+    page = int(page)
+    streams = [x.to_son() for x in Stream.objects(is_scheduled__gt=datetime.now())[page*10:page*10+10]]
+    response_write(socket, OK_200)
+    response_write(socket,json_util.dumps(streams))
+    
+
+    
+    
+    
+
+
+

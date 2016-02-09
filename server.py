@@ -30,7 +30,7 @@ from helpers.auth import decode_signed_value
 from models.user import User
 import urlparse
 from requests.polls import do_poll, get_current_poll, get_poll_by_id
-from requests.users import do_register_user, do_dedicate_event
+from requests.users import do_register_user, do_dedicate_event, get_current_user
 import urllib
 from models import initDb
 from requests import print_stats
@@ -77,6 +77,9 @@ request_handlers = [(re.compile("/listen_audio_stream/([^/]+)")  ,  listen_audio
 
                     
                     ( re.compile("/user/login") , do_register_user),
+                    
+                    ( re.compile("/get_current_user") , get_current_user),
+
                     ( re.compile("/dedicate/(.+)") , do_dedicate_event),
                     ( re.compile("/chat/(.+)") , do_chat_event),
                     ( re.compile("/stats") , print_stats),

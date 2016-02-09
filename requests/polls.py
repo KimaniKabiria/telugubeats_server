@@ -33,10 +33,10 @@ def do_poll(socket, stream_id, poll_id, poll_item_id, user = None):
 
 def get_current_poll(socket, stream_id, user=None):
     response_write(socket, OK_200)
-    response_write(socket, json_util.dumps(Poll.get_current_poll(stream_id).to_son()))
+    response_write(socket, json_util.dumps(Poll.get_current_poll(stream_id).to_son(user=user)))
     socket.close()
     
 def get_poll_by_id(socket, poll_id, user=None):
     response_write(socket, OK_200)
-    response_write(socket, json_util.dumps(Poll.objects(pk=poll_id).get().to_son()))
+    response_write(socket, json_util.dumps(Poll.objects(pk=poll_id).get().to_son(user=user)))
     socket.close()

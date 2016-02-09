@@ -42,14 +42,23 @@ class Poll(Document):
     
     
     
-    def to_son(self, use_db_field=True, fields=None):
+    def to_son(self, use_db_field=True, fields=None, user=None):
         data = SON()
+        user_poll_item = None
+        if(user):
+            user_poll_item = user.get_user_poll_item(str(self.id))
+            
         data["_id"] = self.id
         data["stream_id"] = self.stream_id
         data["created_at"] = self.created_at
         data["poll_items"] = [None for x in range(len(self.poll_items))]
+        
         for i in range(len(self.poll_items)):
+            is_user_voted = (str(self.poll_items[i].id)==str(user_poll_item.id)) if user_poll_item else False
             data["poll_items"][i] = self.poll_items[i].to_son()
+            if(is_user_voted):
+                data["poll_items"][i]["is_voted"] = True
+                
             data["poll_items"][i]["poll"] = self.id
         return data
     

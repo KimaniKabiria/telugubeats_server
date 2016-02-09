@@ -5,7 +5,8 @@ api key , from https://app.google.stackdriver.com/settings/apikeys/
 - https://cloud.google.com/monitoring/agent/plugins/mongodb
 
 
-2) onxe installed , need to add mongo plugin to stackdriver
+2) once installed , need to add mongo plugin to stackdriver
+
 3) restart, see if user auth is needed or not needed , if working correctly
 
 
@@ -29,4 +30,8 @@ db.createUser(
     }
 )
 
+
+
+# all mp3 at 128kbps bit rate, 
+# create album and song entries directly in mongo db
 

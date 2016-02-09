@@ -18,7 +18,8 @@ from config import IS_TEST_BUILD
 from models.song import Song
 import random
 from mongoengine.document import Document
-from mongoengine.fields import IntField, BooleanField, ListField, StringField
+from mongoengine.fields import IntField, BooleanField, ListField, StringField,\
+    DateTimeField
 from models.events import StreamEvent
 from logger import logger
 from helpers.io_utils import response_write
@@ -34,6 +35,13 @@ def audio_publishing_thread(func):
     return wrapper
 
 
+def audio_source_reader(func):
+    def wrapper(stream, *args):
+        stream.audio_reader_thread= Greenlet.spawn(func, stream , *args)
+    return wrapper
+
+
+
 #has audio stream , has events stream and some numbers associated with it
 class Stream(Document):
     #static data
@@ -47,7 +55,7 @@ class Stream(Document):
     is_special_song_stream = BooleanField()
     # host from where we read the data into buffer and keep broadcasting
     source_host = StringField()
-    
+    is_scheduled = DateTimeField()
     title = StringField()
     image = StringField()
     additional_info = StringField()
@@ -201,7 +209,7 @@ class Stream(Document):
                         # -289948
                         
                         
-                        gevent.sleep(0.052)
+                        gevent.sleep(self.sleep_time)
 
                         self.fd.close()
                         break        
@@ -209,8 +217,15 @@ class Stream(Document):
                 logger.debug("an error as occured"+ str(e))
     
     
-
-
+    @audio_source_reader
+    def forward_audio(self, socket):
+        while(True):
+            audio_data = bytearray()
+            while(len(audio_data) < self.buffer.chunk_byte_size):
+                audio_data.extend(bytes(socket.recv()))
+                                
+            self.buffer.queue_chunk(audio_data)            
+        
     @audio_publishing_thread
     def stream_audio(self, socket):    
         for i in config.RESPONSE:
