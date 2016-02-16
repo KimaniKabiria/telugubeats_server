@@ -2,10 +2,10 @@ server_address = '0.0.0.0'
 server_port = 8888
 
 
-dbServer = {"dbName":"telugubeats",
-                   "ip":"localhost",# "db.quizapp.appsandlabs.com",
+db_server = {"db_name":"telugubeats",
+                   "host":"localhost",# "db.quizapp.appsandlabs.com",
                    "port": 27017,
-                   "username": "abhinav",
+                   "user_name": "abhinav",
                    "password":""
    }
 

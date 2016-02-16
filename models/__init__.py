@@ -3,13 +3,8 @@ from mongoengine.document import Document
 from models.song import Song
 from models.polls import Poll
 from responses.stream import InitData
-from config import dbServer
 
 
-
-def initDb():
-    dbConnection = connect(dbServer["dbName"], host=dbServer["ip"], port=dbServer["port"], username=dbServer["username"],password=dbServer["password"])
-    
     
 
 class BaseNoOidDocument(object):

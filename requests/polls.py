@@ -6,13 +6,15 @@ Created on Oct 3, 2015
 from responses.polls import PollChangeEvent
 from enums import Event
 from config import OK_200
-from helpers.io_utils import response_write
+from server.io_utils import response_write
 from models.polls import Poll
 from bson import json_util
 from handlers.streams import streams
+from utils import user_auth
 
 
-def do_poll(socket, stream_id, poll_id, poll_item_id, user = None):
+@user_auth
+def do_poll(socket, stream_id, poll_id, poll_item_id, query_params=None,user = None):
     old_poll_item_id, old_song_title, new_poll_id , new_song_title = user.do_poll(poll_id, poll_item_id)
     
     stream = streams.get(stream_id)
@@ -31,12 +33,14 @@ def do_poll(socket, stream_id, poll_id, poll_item_id, user = None):
     socket.close()
     
 
-def get_current_poll(socket, stream_id, user=None):
+@user_auth
+def get_current_poll(socket, stream_id, query_params=None,user=None):
     response_write(socket, OK_200)
     response_write(socket, json_util.dumps(Poll.get_current_poll(stream_id).to_son(user=user)))
     socket.close()
-    
-def get_poll_by_id(socket, poll_id, user=None):
+
+@user_auth
+def get_poll_by_id(socket, poll_id, query_params=None, user=None):
     response_write(socket, OK_200)
     response_write(socket, json_util.dumps(Poll.objects(pk=poll_id).get().to_son(user=user)))
     socket.close()

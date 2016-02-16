@@ -29,7 +29,7 @@ class StreamEvent(Document):
         return event
     
     @classmethod
-    def get_events(cls, stream_id, n = 20):
+    def get_events(cls, stream_id, n = 50):
         events = StreamEvent.objects(stream_id = stream_id).order_by("-updated_at")[:20]
         return map(lambda x : x, events)
     

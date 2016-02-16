@@ -3,6 +3,7 @@
 	<name>TeluguBeats</name>
 	<comment></comment>
 	<projects>
+		<project>AllSparkRT</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

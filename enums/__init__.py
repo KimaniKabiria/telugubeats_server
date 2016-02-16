@@ -7,3 +7,4 @@ class Event:
     CHAT_MESSAGE = "CHAT_MESSAGE"
     NEW_SONG = "NEW_SONG"
     NEW_POLL = "NEW_POLL"
+    HEARTS= "HEARTS"

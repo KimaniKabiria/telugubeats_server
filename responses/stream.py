@@ -1,4 +1,5 @@
 from bson.son import SON
+from enums import Event
 
 
 class InitData():
@@ -17,6 +18,6 @@ class InitData():
             ret["user"] = self.user.to_son()
             ret["user_poll_item_id"]= self.user_poll_item_id
             
-        ret["last_few_events"] = self.last_few_events
+        ret["last_few_events"] = self.last_few_events.get(Event.CHAT_MESSAGE,[])
         ret["n_users"] = self.n_user
         return ret

@@ -9,7 +9,7 @@ from buffers import Buffer
 import config
 from models.polls import Poll
 
-from enums import Event
+from enums import Event 
 from bson import json_util
 from datetime import datetime
 import urllib
@@ -22,7 +22,8 @@ from mongoengine.fields import IntField, BooleanField, ListField, StringField,\
     DateTimeField
 from models.events import StreamEvent
 from logger import logger
-from helpers.io_utils import response_write
+from server.io_utils import response_write
+from models.user import User
 
 
 streams = {}
@@ -59,14 +60,15 @@ class Stream(Document):
     title = StringField()
     image = StringField()
     additional_info = StringField()
-    
+    user = StringField()
+    heart_count = IntField();
     
     
     
     #live data
     event_listeners = {} # sockets list
     event_queue = None
-    last_few_events = []
+    last_few_events = {}
     stream_buffers_info = []
 
     event_publisher_thread = None  # this is a listener model
@@ -84,8 +86,13 @@ class Stream(Document):
         streams[self.stream_id] = self
                 
         self.event_queue = Queue()
-        self.last_few_events  = StreamEvent.get_events(self.stream_id)
-                
+        for event in StreamEvent.get_events(self.stream_id):
+            l = self.last_few_events.get(event.event_id,None)
+            if(not l):
+                l= []
+                self.last_few_events[event.event_id]= l
+            l.append(event)
+                            
         #start publishing to subscribers      
         self.event_publisher_thread = Greenlet.spawn(Stream.start_publishing_events, self)
 
@@ -208,7 +215,6 @@ class Stream(Document):
                         # 1111 1111 1111 1011 1001 0011 0110 0100
                         # -289948
                         
-                        
                         gevent.sleep(self.sleep_time)
 
                         self.fd.close()
@@ -280,10 +286,15 @@ class Stream(Document):
             # blocking call
             stream_event = self.event_queue.get()
                 
-            if(len(self.last_few_events)>20):
-                self.last_few_events.pop(0)
+            events_list = self.last_few_events.get(stream_event.event_id,None)
+            if(events_list==None):
+                events_list = []
+                self.last_few_events[stream_event.event_id] = events_list
+                
+            if(len(events_list)>20):
+                events_list.pop(0)
                             
-            self.last_few_events.append(stream_event)
+            events_list.append(stream_event)
             
             data_to_send = stream_event.to_json()
 
@@ -292,12 +303,23 @@ class Stream(Document):
                 Greenlet.spawn(Stream.send_event , self, socket, data_to_send)
     
     def publish_event(self, event_id,  event_data , from_user=None):
+        
+        if(event_id==Event.HEARTS):
+            self.heart_count+=int(event_data)
+            self.save()
+        
         stream_event  = StreamEvent(event_id = event_id, data = event_data, from_user= from_user)
         stream_event.save()
         self.event_queue.put(stream_event)
         
     def to_son(self):
-        return self.to_mongo()
+        ret = self.to_mongo()
+        if(self.user):
+            user = User.objects(pk=self.user).get()
+            ret["user"] = user.to_son()
+        return ret
+            
+            
 
 
 

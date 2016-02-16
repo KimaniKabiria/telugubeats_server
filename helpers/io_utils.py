@@ -39,12 +39,4 @@ class BufferedFile(object):
             self.data.seek(offset)
             
             
-            
-def response_write(socket, data):
-    n = 0
-    l = len(data)
-    while(n<l):
-        n += socket.send(data[n:])
-        if(n<0):
-            break
-        
+

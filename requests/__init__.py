@@ -1,14 +1,15 @@
-from helpers.io_utils import response_write
 from bson import json_util
 import json
 from config import OK_200
 from handlers.streams import streams
+from utils import user_auth
+from server.io_utils import response_write
 
 
 ## stream requesats init
 
 
-    
+@user_auth
 def print_stats(socket, stream_id="telugu", user = None):
     live_sockets = streams
     stats = {"live users : ":map(lambda x : {x: len(live_sockets[x].event_listeners)} , live_sockets.keys())}
