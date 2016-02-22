@@ -24,6 +24,7 @@ from models.events import StreamEvent
 from logger import logger
 from server.io_utils import response_write
 from models.user import User
+from server.rt import connect_sink
 
 
 streams = {}
@@ -31,8 +32,9 @@ streams = {}
 
 
 def audio_publishing_thread(func):
-    def wrapper(stream, *args):
-        stream.audio_publishing_threads.append(Greenlet.spawn(func, stream , *args))
+    def wrapper(stream, socket , *args):
+        stream.audio_publishing_threads.append(Greenlet.spawn(func, stream ,  socket, *args))
+        connect_sink(socket, "telugubeats",stream.stream_id)
     return wrapper
 
 
