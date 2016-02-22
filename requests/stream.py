@@ -33,7 +33,7 @@ def get_stream_info(socket, stream_id, query_params=None,user=None):
 def get_last_events(socket, stream_id, from_time_stamp , query_params=None,user=None):
     from_time_stamp = int(from_time_stamp)
     
-    events = streams.get(stream_id).last_few_events.get(Event.CHAT_MESSAGE, [])
+    events = streams.get(stream_id).last_few_events.get(Event.POLLS_CHANGED, [])[-10:]+ streams.get(stream_id).last_few_events.get(Event.CHAT_MESSAGE, [])
     socket.send(OK_200)
     response_write(socket, json_util.dumps([x.to_son()  for x in events]))
     socket.close()
