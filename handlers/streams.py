@@ -151,6 +151,7 @@ class Stream(Document):
         logger.debug("start reading audio stream :: " + self.stream_id)
         
         last_sent_time_stamp = 0 # last timestamp where we sent a packet
+        song = None
         while(True):
             song_url_path = None
             current_poll = Poll.get_current_poll(self.stream_id)
