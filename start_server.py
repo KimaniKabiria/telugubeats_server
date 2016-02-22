@@ -24,7 +24,7 @@ from bson import json_util
 from bson.son import SON
 from requests.stream import listen_audio_stream, listen_events, get_stream_info,\
     get_last_events, get_song_by_id, send_hearts, get_live_audio_streams,\
-    get_scheduled_streams
+    get_scheduled_streams, forward_audio_stream, get_user_streams
 from mimetools import Message
 from StringIO import StringIO
 from models.user import User
@@ -78,9 +78,12 @@ request_handlers = [(re.compile("/listen_audio_stream/([^/]+)")  ,  listen_audio
                     
                     ( re.compile("/poll/([^/]+)/([^/]+)/(.*)") , do_poll), #"/poll/telugu/123123/12312312"
 
+                    ( re.compile("/forward_stream/([^/]+)") ,forward_audio_stream), #"/poll/telugu/123123/12312312"
+
                     
-                    ( re.compile("/get_live_audio_streams/([^/]+)") , get_live_audio_streams), #"/poll/telugu/123123/12312312"
-                    ( re.compile("/get_scheduled_audio_streams/([^/]+)") , get_scheduled_streams), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/get_live_audio_streams/([^/|^?]+)") , get_live_audio_streams), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/get_scheduled_audio_streams/([^/^?]+)") , get_scheduled_streams), #"/poll/telugu/123123/12312312"
+                    ( re.compile("/get_user_streams/([^/^?]+)") , get_user_streams), #"/poll/telugu/123123/12312312"
 
                     
                     ( re.compile("/user/login") , do_register_user),
@@ -104,7 +107,7 @@ if __name__ == "__main__":
     if(stream):
         stream = stream[0]
     else:
-        stream = Stream(stream_id="telugu", is_special_song_stream=True)
+        stream = Stream(stream_id="telugu", is_special_song_stream=True, is_live=True)
         stream.save()
 
     stream.initialize()

@@ -44,6 +44,8 @@ class User(Document):
     def to_short_son(self):
         ret = SON()
         ret["name"] = self.name
+        ret["picture_url"] = self.picture_url
+
         ret["_id"] = self.id
         
         return ret

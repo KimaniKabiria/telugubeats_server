@@ -12,13 +12,18 @@ from models.song import Song
 from datetime import datetime
 from utils import user_auth
 from server.io_utils import response_write
+from server.logger import logger
+from server.config import OK_404
 
 
 
 @user_auth
 def get_stream_info(socket, stream_id, query_params=None,user=None):
     socket.send(OK_200)
-    response_write(socket, json_util.dumps(streams.get(stream_id).to_mongo()))
+    stream = streams.get(stream_id)
+    if(not stream):
+        stream = Stream.objects(stream_id=stream_id).get()
+    response_write(socket, json_util.dumps(stream.to_son()))
     socket.close()
     
 @user_auth
@@ -39,8 +44,24 @@ def get_song_by_id(socket, song_id, query_params=None):
 
 
 
-def forward_audio_stream(socket, stream_id, user=None):
-    streams.get(stream_id).forward_audio(socket)
+
+@user_auth
+def forward_audio_stream(socket, stream_id, user=None, query_params=None):
+    stream = streams.get(stream_id)    
+    if(not stream):
+        stream = Stream.objects(stream_id=stream_id , user = str(user.id)).get()
+        
+    if(not stream or stream.is_live):
+        response_write(socket,OK_404)
+        logger.debug("stream already alive , cannot forward again")
+        socket.close()
+        return
+    stream.initialize()
+    response_write(socket,OK_200)
+    logger.debug("reading audio now..")
+    stream.forward_audio(socket)
+    
+    
     
 @user_auth
 def listen_audio_stream(socket, stream_id, query_params=None, user=None):
@@ -61,7 +82,7 @@ def get_live_audio_streams(socket,  page , query_params=None, user=None):
     streams = [x.to_son() for x in Stream.objects(is_live=True)[page*10:page*10+10]]
     response_write(socket, OK_200)
     response_write(socket,json_util.dumps(streams))
-    
+    socket.close()
 
 @user_auth
 def get_scheduled_streams(socket, page, query_params=None, user=None):
@@ -69,15 +90,15 @@ def get_scheduled_streams(socket, page, query_params=None, user=None):
     streams = [x.to_son() for x in Stream.objects(is_scheduled__gt=datetime.now())[page*10:page*10+10]]
     response_write(socket, OK_200)
     response_write(socket,json_util.dumps(streams))
-    
+    socket.close()
 
 @user_auth
-def get_user_streams(socket, page, user=None):
+def get_user_streams(socket, page, user=None, query_params=None):
     page = int(page)
     streams = [x.to_son() for x in Stream.objects(user= str(user.id))[page*10:page*10+10]]
     response_write(socket, OK_200)
     response_write(socket,json_util.dumps(streams))
-    
+    socket.close()
 
     
 
@@ -89,4 +110,3 @@ def send_hearts(socket, stream_id, hearts_count ,query_params=None, user=None):
     response_write(socket, OK_200)
     response_write(socket, "ok")
     socket.close()    
-    pass

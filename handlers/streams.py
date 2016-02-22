@@ -78,10 +78,17 @@ class Stream(Document):
     audio_reader_thread = None    
     audio_publishing_threads = [] # one for each clients
     
-    
+    is_initialized = False
+
     
     
     def initialize(self):
+        
+        if(self.is_initialized):
+            return
+        
+        self.is_initialized = True
+
         logger.debug("initializing stream " + self.stream_id)
         streams[self.stream_id] = self
                 
@@ -225,12 +232,27 @@ class Stream(Document):
     
     @audio_source_reader
     def forward_audio(self, socket):
-        while(True):
-            audio_data = bytearray()
-            while(len(audio_data) < self.buffer.chunk_byte_size):
-                audio_data.extend(bytes(socket.recv()))
-                                
-            self.buffer.queue_chunk(audio_data)            
+        self.is_live = True
+        self.save()
+        is_live = True
+        try:
+            while(is_live):
+                audio_data = bytearray()
+                while(len(audio_data) < self.buffer.chunk_byte_size):
+                    data = socket.recv(self.buffer.chunk_byte_size)
+                    logger.debug("streaming data")
+                    if(not data):
+                        is_live = False
+                        break
+                    audio_data.extend(bytes(data))
+                self.buffer.queue_chunk(audio_data)            
+        except:
+            logger.debug("error in forwarding stream , closing now"+self.stream_id)                        
+        finally:
+            self.is_live = False
+            self.save()
+            
+            
         
     @audio_publishing_thread
     def stream_audio(self, socket):    
@@ -238,7 +260,7 @@ class Stream(Document):
             socket.send(i)
         buffer, byte_rate , sleep_time = self.stream_buffers_info
         last_sent_time = time.time() # 4 chunks once  #16*chunks per second #bitrate , 16kbytes per second =>
-        current_index =  buffer.get_current_head()-4
+        current_index =  buffer.get_current_head()-2    
         max_chunk_diff = 20
         while True:
             cur_time = time.time()
@@ -305,6 +327,8 @@ class Stream(Document):
     def publish_event(self, event_id,  event_data , from_user=None):
         
         if(event_id==Event.HEARTS):
+            if(not self.heart_count):
+                self.heart_count = 0
             self.heart_count+=int(event_data)
             self.save()
         
@@ -316,7 +340,7 @@ class Stream(Document):
         ret = self.to_mongo()
         if(self.user):
             user = User.objects(pk=self.user).get()
-            ret["user"] = user.to_son()
+            ret["user"] = user.to_short_son()
         return ret
             
             

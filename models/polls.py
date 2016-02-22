@@ -7,6 +7,7 @@ import datetime
 from mongoengine.errors import MultipleObjectsReturned, DoesNotExist
 from bson.son import SON
 from bson import json_util
+from server.logger import logger
 
 
 
@@ -53,12 +54,13 @@ class Poll(Document):
         data["created_at"] = self.created_at
         data["poll_items"] = [None for x in range(len(self.poll_items))]
         
+        
         for i in range(len(self.poll_items)):
-            is_user_voted = (str(self.poll_items[i].id)==str(user_poll_item.id)) if user_poll_item else False
+            is_user_voted = (str(self.poll_items[i].id)==str(user_poll_item.poll_item.id)) if user_poll_item else False
             data["poll_items"][i] = self.poll_items[i].to_son()
             if(is_user_voted):
                 data["poll_items"][i]["is_voted"] = True
-                
+
             data["poll_items"][i]["poll"] = self.id
         return data
     
