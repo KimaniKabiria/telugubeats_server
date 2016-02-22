@@ -10,10 +10,12 @@ from config import OK_200
 from handlers.streams import streams, Stream
 from models.song import Song
 from datetime import datetime
-from utils import user_auth
+from utils import user_auth, helper_funcs
 from server.io_utils import response_write
 from server.logger import logger
 from server.config import OK_404
+import traceback
+import sys
 
 
 
@@ -100,7 +102,28 @@ def get_user_streams(socket, page, user=None, query_params=None):
     response_write(socket,json_util.dumps(streams))
     socket.close()
 
+@user_auth
+def create_stream(socket, user=None, query_params=None):
+    new_steam = None
+    while(True):
+        try:
+            new_stream = Stream()
+            new_stream.stream_id = helper_funcs.get_random_id(10)
+            new_stream.title = query_params["title"][0]
+            new_stream.additional_info = query_params["additional_info"][0]
+            new_stream.user = str(user.id)
+            new_stream.is_special_song_stream = False
+            new_stream.save() 
+            break
+        except:
+            logger.debug(sys.exc_info())
+            pass
     
+    response_write(socket, OK_200)
+    response_write(socket,json_util.dumps(new_stream.to_son()))
+    socket.close()
+
+
 
     
 @user_auth

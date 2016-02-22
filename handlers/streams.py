@@ -79,7 +79,8 @@ class Stream(Document):
     audio_publishing_threads = [] # one for each clients
     
     is_initialized = False
-
+    
+    is_reading_from_source = False
     
     
     def initialize(self):
@@ -116,19 +117,32 @@ class Stream(Document):
             else:
                 '''some user should be sending data to this host # nothing to do'''
                 
-                
+    
+    def de_initialize(self):
+        #clear all buffers here
+        del streams[self.stream_id]
 
     def init_buffers(self,bit_rate_in_kbps = 128.0):
-        self.buffer = buffer =  Buffer()
+        
+        
         self.byte_rate = byte_rate = ((bit_rate_in_kbps/8)*1024)
+        self.buffer = buffer =  Buffer(chunk_byte_size=int(byte_rate)) # 1 second data
+
         self.sleep_time = sleep_time = (buffer.chunk_byte_size*1.0)/byte_rate
         self.stream_buffers_info = [buffer , byte_rate, sleep_time]
         
-    
-    def start_reading_from_source(self):        
-        if(self.is_special_song_stream):
-            self.read_into_buffer_from_db_files()
-    
+        
+        
+    def start_reading_audio_from_source(self):
+        #TODO:
+        #open a http call , listen_stream and buffer this data into buffers
+        self.is_reading_from_source = True
+        while(self.is_reading_from_source):
+            pass
+        
+        self.de_initialize()
+        
+        
     def start_reading_from_files(self):
         logger.debug("start reading from files " + self.stream_id)
                 
@@ -240,17 +254,18 @@ class Stream(Document):
                 audio_data = bytearray()
                 while(len(audio_data) < self.buffer.chunk_byte_size):
                     data = socket.recv(self.buffer.chunk_byte_size)
-                    logger.debug("streaming data")
                     if(not data):
                         is_live = False
                         break
                     audio_data.extend(bytes(data))
                 self.buffer.queue_chunk(audio_data)            
         except:
-            logger.debug("error in forwarding stream , closing now"+self.stream_id)                        
+            logger.debug("error in forwarding stream , closing now"+self.stream_id)
         finally:
+            
             self.is_live = False
             self.save()
+            gevent.joinall(self.audio_publishing_threads)
             
             
         
@@ -260,9 +275,9 @@ class Stream(Document):
             socket.send(i)
         buffer, byte_rate , sleep_time = self.stream_buffers_info
         last_sent_time = time.time() # 4 chunks once  #16*chunks per second #bitrate , 16kbytes per second =>
-        current_index =  buffer.get_current_head()-2    
+        current_index =  buffer.get_current_head()-( 4 if self.is_special_song_stream else 1)   
         max_chunk_diff = 20
-        while True:
+        while self.is_live:
             cur_time = time.time()
             if(cur_time - last_sent_time> sleep_time):
                 last_sent_time = cur_time
@@ -286,7 +301,9 @@ class Stream(Document):
                     gevent.sleep( sleep_time)
             else:
                 gevent.sleep(sleep_time)
-
+        
+        if(not self.is_live):#closing because source has closed
+            socket.close()
 
 
     def add_event_listener(self, socket):
