@@ -16,6 +16,7 @@ from server.logger import logger
 from server.config import OK_404
 import traceback
 import sys
+from server.rt import connect_sink
 
 
 
@@ -74,7 +75,7 @@ def listen_audio_stream(socket, stream_id, query_params=None, user=None):
 def listen_events(socket, stream_id,query_params=None, user=None):
     response_write(socket, OK_200)
     streams.get(stream_id).add_event_listener(socket)
-    
+    connect_sink(socket,"telugubeats",stream_id)# don't break the connection
 
 
 
