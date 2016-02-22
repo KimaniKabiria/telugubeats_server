@@ -40,7 +40,8 @@ def audio_publishing_thread(func):
 
 def audio_source_reader(func):
     def wrapper(stream, *args):
-        stream.audio_reader_thread= Greenlet.spawn(func, stream , *args)
+        stream.audio_reader_thread= gevent.getcurrent() 
+        func(stream , *args)
     return wrapper
 
 
