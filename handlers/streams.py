@@ -353,8 +353,7 @@ class Stream(Document):
             self.heart_count+=int(event_data)
             self.save()
         
-        stream_event  = StreamEvent(event_id = event_id, data = event_data, from_user= from_user)
-        stream_event.save()
+        stream_event  = StreamEvent.add(stream_id= self.stream_id, event_id = event_id, data = event_data, from_user= from_user)
         self.event_queue.put(stream_event)
         
     def to_son(self):

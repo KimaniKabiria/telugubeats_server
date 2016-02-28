@@ -22,9 +22,9 @@ class StreamEvent(Document):
     
     
     @classmethod
-    def add(cls , stream_id , event_id ,  data , tags=[]):
+    def add(cls , stream_id=stream_id, event_id=event_id ,  data=data , from_user=from_user,  tags=[]):
         logger.debug("adding "+event_id+" to "+stream_id)
-        event = StreamEvent(stream_id = stream_id , event_id=event_id,  data = data , tags = tags)
+        event = StreamEvent(stream_id = stream_id , event_id=event_id,  data = data , from_user=from_user, tags = tags)
         event.save()
         return event
     
