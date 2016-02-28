@@ -69,17 +69,17 @@ class Stream(Document):
     
     
     #live data
-    event_listeners = {} # sockets list
+    event_listeners = None # sockets list
     event_queue = None
-    last_few_events = {}
-    stream_buffers_info = []
+    last_few_events = None
+    stream_buffers_info = None
 
     event_publisher_thread = None  # this is a listener model
     
     events_reader_thread = None
     
     audio_reader_thread = None    
-    audio_publishing_threads = [] # one for each clients
+    audio_publishing_threads = None # one for each clients
     
     is_initialized = False
     
@@ -92,7 +92,11 @@ class Stream(Document):
             return
         
         self.is_initialized = True
-
+        self.audio_publishing_threads = []
+        self.event_listeners = {}
+        self.last_few_events = {}
+        
+        
         logger.debug("initializing stream " + self.stream_id)
         streams[self.stream_id] = self
                 
