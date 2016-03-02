@@ -34,3 +34,6 @@ class Buffer():
     
     def get_current_head(self):
         return self.h-1
+    
+    def get_past_data_index(self):
+        return (self.h- 256 + self.size)%self.size # 256 seconds approx 

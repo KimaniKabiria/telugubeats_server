@@ -24,7 +24,8 @@ from bson import json_util
 from bson.son import SON
 from requests.stream import listen_audio_stream, listen_events, get_stream_info,\
     get_last_events, get_song_by_id, send_hearts, get_live_audio_streams,\
-    get_scheduled_streams, forward_audio_stream, get_user_streams, create_stream
+    get_scheduled_streams, forward_audio_stream, get_user_streams, create_stream,\
+    get_past_stream
 from mimetools import Message
 from StringIO import StringIO
 from models.user import User
@@ -75,7 +76,7 @@ request_handlers = [(re.compile("/listen_audio_stream/([^/]+)")  ,  listen_audio
                     ( re.compile("/get_last_events/([^/]+)/(.*)") , get_last_events), #"/poll/telugu/123123/12312312"
                     ( re.compile("/get_song_by_id/([^/]+)") , get_song_by_id), #"/poll/telugu/123123/12312312"
                     ( re.compile("/get_poll_by_id/([^/]+)") , get_poll_by_id), #"/poll/telugu/123123/12312312"
-                    
+                    ( re.compile("/get_past_stream/([^/]+)"), get_past_stream),
                     ( re.compile("/poll/([^/]+)/([^/]+)/(.*)") , do_poll), #"/poll/telugu/123123/12312312"
 
                     ( re.compile("/forward_stream/([^/]+)") ,forward_audio_stream), #"/poll/telugu/123123/12312312"

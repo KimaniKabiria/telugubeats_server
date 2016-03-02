@@ -22,10 +22,10 @@ nohup mongod --dbpath ./dbdata &
 user quizapp;
 db.createUser(
     {
-      user: "quizapp",
+      user: "abhinav",
       pwd: "warrior_within",
       roles: [
-         { role: "readWrite", db: "quizapp" }
+         { role: "readWrite", db: "telugubeats" }
       ]
     }
 )

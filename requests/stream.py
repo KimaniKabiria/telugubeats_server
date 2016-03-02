@@ -6,7 +6,7 @@ handles events and audio listeners and initial data
 
 from bson import json_util
 from enums import Event
-from config import OK_200
+from config import OK_200, OK_MP3_200
 from handlers.streams import streams, Stream
 from models.song import Song
 from datetime import datetime
@@ -125,7 +125,11 @@ def create_stream(socket, user=None, query_params=None):
     socket.close()
 
 
-
+def get_past_stream(socket, stream_id , query_params=None):
+    response_write(socket, OK_MP3_200)
+    # it closes it automatically
+    streams.get(stream_id).send_last_min_buffer(socket)
+    
     
 @user_auth
 def send_hearts(socket, stream_id, hearts_count ,query_params=None, user=None):

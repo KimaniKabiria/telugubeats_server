@@ -21,10 +21,14 @@ IS_TEST_BUILD = True
 
 OK_200 = "HTTP/1.0 200 OK\r\n\r\n"
 
+OK_MP3_200 = "HTTP/1.0 200 OK\r\nContent-Type: audio/mpeg\r\nContent-Disposition: filename=\"music.mp3\"\r\n\r\n"
+
+
+
 RESPONSE = ["HTTP/1.0 200 OK\r\n",
      "icy-notice1: <BR>This stream requires",
      "icy-notice2: Winamp, or another streaming media player<BR>\r\n",
-     "icy-name: Python mix\r\n",
+     "icy-name: Hosted with allsparkRT\r\n",
      "icy-genre: Jazz Classical Rock\r\n",
      "icy-url: http://", server_address, ":", str(server_port), "\r\n",
      "content-type: audio/mpeg\r\n",

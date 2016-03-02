@@ -7,7 +7,6 @@ from bson import json_util
 import socket
 from StringIO import StringIO
 from models.polls import Poll, UserPolls
-from models import initDb
 from mongoengine.document import Document
 from mongoengine.fields import ReferenceField, IntField
 from bson.dbref import DBRef
@@ -15,7 +14,7 @@ import array
 import buffers
 
 
-initDb()
+
     
 def load():
     album = Album()
@@ -129,7 +128,15 @@ def test_8():
     
     
     
+def test_9():
+    from server.cookies import decode_signed_value, create_signed_value
+    import urllib
+    import config
     
+    user_key = create_signed_value(config.SERVER_SECRET, "auth_key", "56cb16c247120d6c14888a26")
+    print urllib.quote(user_key)
+    print decode_signed_value(config.SERVER_SECRET , "auth_key",urllib.unquote(user_key))
+
         
 #test4(False)
-test_8()   
+test_9()   

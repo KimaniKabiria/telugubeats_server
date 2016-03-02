@@ -22,7 +22,7 @@ from mongoengine.fields import IntField, BooleanField, ListField, StringField,\
     DateTimeField
 from models.events import StreamEvent
 from logger import logger
-from server.io_utils import response_write
+from server.io_utils import response_write, response_raw_write
 from models.user import User
 from server.rt import connect_sink
 
@@ -359,6 +359,20 @@ class Stream(Document):
         
         stream_event  = StreamEvent.add(stream_id= self.stream_id, event_id = event_id, data = event_data, from_user= from_user)
         self.event_queue.put(stream_event)
+    
+    
+    def send_last_min_buffer(self, socket):
+        index_a = self.buffer.get_past_data_index()
+        index_b = self.buffer.get_current_head()
+        while index_a!=index_b:
+            byte_chunk = self.buffer.get_chunk(index_a)
+            if(byte_chunk!=0):
+                response_raw_write(socket, byte_chunk)
+            index_a = (index_a+1)%self.buffer.size
+        socket.close()
+        
+            
+            
         
     def to_son(self):
         ret = self.to_mongo()
