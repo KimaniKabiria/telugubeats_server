@@ -283,7 +283,7 @@ class Stream(Document):
             socket.send(i)
         buffer, byte_rate , sleep_time = self.stream_buffers_info
         last_sent_time = time.time() # 4 chunks once  #16*chunks per second #bitrate , 16kbytes per second =>
-        current_index =  buffer.get_current_head()-( 4 if self.is_special_song_stream else 1)   
+        current_index =  buffer.get_current_head()-1   
         max_chunk_diff = 20
         while self.is_live:
             cur_time = time.time()
