@@ -98,6 +98,7 @@ class Poll(Document):
         # create poll items , 
         # create poll item with the stream Id
         #return 
+        logger.debug("creating new poll")
         total_songs = SongsMeta.objects().get().n
             
         poll = Poll()
